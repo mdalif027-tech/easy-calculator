@@ -2523,3 +2523,42 @@ if (removeAdsButton) {
         }
     });
 }
+/* =========================================================
+   DESKTOP KEYBOARD SUPPORT
+   ========================================================= */
+
+window.addEventListener("keydown", function(event) {
+    // Do not capture keystrokes if typing inside settings inputs or other text boxes
+    if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+        return;
+    }
+
+    const key = event.key;
+
+    if (!isNaN(key) || key === ".") {
+        // Find and trigger matching number button
+        const btn = Array.from(numberButtons).find(b => b.textContent.trim() === key);
+        if (btn) btn.click();
+    } else if (key === "+") {
+        const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "+");
+        if (btn) btn.click();
+    } else if (key === "-") {
+        const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "−");
+        if (btn) btn.click();
+    } else if (key === "*") {
+        const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "×");
+        if (btn) btn.click();
+    } else if (key === "/") {
+        event.preventDefault(); // Prevents browser quick-find search shortcut
+        const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "÷");
+        if (btn) btn.click();
+    } else if (key === "Enter" || key === "=") {
+        equalsButton.click();
+    } else if (key === "Backspace") {
+        backspaceButton.click();
+    } else if (key === "Escape") {
+        clearButton.click();
+    } else if (key === "%") {
+        percentageButton.click();
+    }
+});
