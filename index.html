@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Easy Calculator</title>
+
+    <link rel="stylesheet" href="style.css">
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3b82f6">
+</head>
+
+<body>
+
+    <main class="calculator">
+
+        <!-- Top Bar -->
+        <header class="top-bar">
+
+            <button class="top-button interest-back-top" id="interestBackButton" hidden>
+                ← Calculator
+            </button>
+            
+            <button class="top-button" id="conversionBackButton" hidden>
+                ← Calculator
+            </button>
+
+            <button class="top-button" id="saleBackButton" hidden>
+                ← Calculator
+            </button>
+
+            <button class="top-button" id="scientificBackButton" hidden>
+                ← Calculator
+            </button>
+
+            <button class="top-button" id="historyButton">
+                History
+            </button>
+
+            <button class="top-button" id="settingsButton">
+                ⚙ Settings
+            </button>
+
+        </header>
+
+
+        <!-- Display -->
+        <section class="display">
+
+            <div
+                class="calculation"
+                id="calculation">
+            </div>
+
+            <div
+                class="result"
+                id="result">
+                0
+            </div>
+
+        </section>
+
+
+        <!-- Calculator Modes -->
+        <nav class="modes">
+
+            <button id="scientificModeButton">Scientific</button>
+            <button id="saleModeButton">Sale</button>
+            <button id="conversionModeButton">Conversion</button>
+            <button id="interestModeButton">Interest</button>
+
+        </nav>
+
+
+      <!-- =========================
+             SCIENTIFIC CALCULATOR
+             ========================= -->
+
+        <section class="interest-calculator sci-card-container" id="scientificCalculator">
+
+            <div class="interest-header">
+                <h2>Scientific Calculator</h2>
+            </div>
+
+            <!-- Scientific Keypad Grid -->
+            <div class="sci-keypad">
+                <button class="sci-btn" data-action="sqrt">√x</button>
+                <button class="sci-btn" data-action="pow">x²</button>
+                <button class="sci-btn" data-action="sin">sin</button>
+                <button class="sci-btn" data-action="cos">cos</button>
+                <button class="sci-btn" data-action="tan">tan</button>
+                <button class="sci-btn" data-action="log">log</button>
+                <button class="sci-btn" data-action="pi">π</button>
+                <button class="sci-btn" data-action="e">e</button>
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             SALE CALCULATOR
+             ========================= -->
+
+        <section class="interest-calculator" id="saleCalculator">
+            
+            <div class="interest-header">
+                <h2>Sale & Discount Calculator</h2>
+            </div>
+
+            <!-- Original Price -->
+            <label class="interest-field">
+                <span>Original Price</span>
+                <div class="interest-input">
+                    <input
+                        id="saleOriginalPrice"
+                        type="number"
+                        inputmode="decimal"
+                        placeholder="0">
+                </div>
+            </label>
+
+            <!-- Discount Percentage -->
+            <label class="interest-field">
+                <span>Discount Percentage</span>
+                <div class="interest-input">
+                    <input
+                        id="saleDiscountRate"
+                        type="number"
+                        inputmode="decimal"
+                        placeholder="0">
+                    <span class="input-unit">%</span>
+                </div>
+            </label>
+
+            <!-- Result Box -->
+            <div class="interest-result">
+                <div class="interest-result-row">
+                    <span>You Save</span>
+                    <strong id="saleYouSave">0</strong>
+                </div>
+
+                <div class="interest-result-row final-amount">
+                    <span>Final Price</span>
+                    <strong id="saleFinalPrice">0</strong>
+                </div>
+            </div>
+
+            <!-- Share & Viral Loop Button -->
+            <button class="affiliate-card share-btn-action" id="shareSaleButton" style="width:100%; margin-top:12px; text-align:center; cursor:pointer;">
+                📤 Share Sale Breakdown
+            </button>
+
+            <!-- Contextual Affiliate Banner -->
+            <div class="affiliate-card">
+                <span>🛍️ Want more savings? <a href="#" target="_blank" rel="noopener">Install top-rated cash-back extensions</a></span>
+            </div>
+
+            <!-- Explanation -->
+            <details class="interest-explanation">
+                <summary>How was this calculated?</summary>
+                <div id="saleExplanation">
+                    Enter the original price and discount percentage to see your savings.
+                </div>
+            </details>
+
+        </section>
+
+
+        <!-- =========================
+             CONVERSION CALCULATOR
+             ========================= -->
+
+        <section class="interest-calculator" id="conversionCalculator">
+            
+            <div class="interest-header">
+                <h2>Unit Converter</h2>
+            </div>
+
+            <!-- Category -->
+            <div class="interest-field">
+                <span>Category</span>
+                <div class="interest-input">
+                    <select id="conversionCategory">
+                        <option value="length">Length</option>
+                        <option value="weight">Weight</option>
+                        <option value="temperature">Temperature</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Amount to Convert -->
+            <label class="interest-field">
+                <span>Amount</span>
+                <div class="interest-input">
+                    <input
+                        id="conversionAmount"
+                        type="number"
+                        inputmode="decimal"
+                        placeholder="0">
+                </div>
+            </label>
+
+            <!-- From Unit -->
+            <label class="interest-field">
+                <span>From</span>
+                <div class="interest-input">
+                    <select id="conversionFromUnit">
+                        <option value="meters">Meters</option>
+                        <option value="feet">Feet</option>
+                        <option value="inches">Inches</option>
+                        <option value="centimeters">Centimeters</option>
+                    </select>
+                </div>
+            </label>
+
+            <!-- To Unit -->
+            <label class="interest-field">
+                <span>To</span>
+                <div class="interest-input">
+                    <select id="conversionToUnit">
+                        <option value="feet">Feet</option>
+                        <option value="meters">Meters</option>
+                        <option value="inches">Inches</option>
+                        <option value="centimeters">Centimeters</option>
+                    </select>
+                </div>
+            </label>
+
+            <!-- Result -->
+            <div class="interest-result">
+                <div class="interest-result-row final-amount">
+                    <span>Result</span>
+                    <strong id="conversionFinalResult">0</strong>
+                </div>
+            </div>
+
+            <!-- Explanation -->
+            <details class="interest-explanation">
+                <summary>How does this work?</summary>
+                <div id="conversionExplanation">
+                    Select a category, enter an amount, and choose your units to convert.
+                </div>
+            </details>
+
+        </section>
+
+
+        <!-- =========================
+             INTEREST CALCULATOR
+             ========================= -->
+
+        <section
+            class="interest-calculator"
+            id="interestCalculator">
+
+            <div class="interest-header">
+
+                <h2>
+                    Interest Calculator
+                </h2>
+
+            </div>
+
+
+            <!-- Interest Type -->
+
+            <div class="interest-type">
+
+                <button
+                    class="interest-type-button active"
+                    id="simpleInterestButton">
+                    Simple
+                </button>
+
+                <button
+                    class="interest-type-button"
+                    id="compoundInterestButton">
+                    Compound
+                </button>
+
+            </div>
+
+
+            <!-- Amount -->
+
+            <label class="interest-field">
+
+                <span>
+                    Amount
+                </span>
+
+                <div class="interest-input">
+
+                    <input
+                        id="interestAmount"
+                        type="number"
+                        inputmode="decimal"
+                        placeholder="0">
+
+                </div>
+
+            </label>
+
+
+            <!-- Interest Rate -->
+
+            <label class="interest-field">
+
+                <span>
+                    Interest Rate
+                </span>
+
+                <div class="interest-input">
+
+                    <input
+                        id="interestRate"
+                        type="number"
+                        inputmode="decimal"
+                        placeholder="0">
+
+                    <span class="input-unit">
+                        %
+                    </span>
+
+                </div>
+
+            </label>
+
+
+            <!-- Time -->
+
+            <label class="interest-field">
+
+                <span>
+                    Time
+                </span>
+
+                <div class="interest-input">
+
+                    <input
+                        id="interestTime"
+                        type="number"
+                        inputmode="decimal"
+                        placeholder="0">
+
+                    <select id="interestTimeUnit">
+
+                        <option value="years">
+                            Years
+                        </option>
+
+                        <option value="months">
+                            Months
+                        </option>
+
+                        <option value="days">
+                            Days
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </label>
+
+
+            <!-- Compound Frequency -->
+
+            <div
+                class="interest-field compound-frequency"
+                id="compoundFrequency">
+
+                <span>
+                    Compounding
+                </span>
+
+                <select id="compoundFrequencySelect">
+
+                    <option value="1">
+                        Yearly
+                    </option>
+
+                    <option value="2">
+                        Half-yearly
+                    </option>
+
+                    <option value="4">
+                        Quarterly
+                    </option>
+
+                    <option value="12">
+                        Monthly
+                    </option>
+
+                    <option value="365">
+                        Daily
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- Action Buttons -->
+
+            <div class="interest-actions">
+
+                <button
+                    id="addInterestButton">
+                    + Interest
+                </button>
+
+                <button
+                    id="subtractInterestButton">
+                    − Interest
+                </button>
+
+            </div>
+
+
+            <!-- Result -->
+
+            <div class="interest-result">
+
+                <div class="interest-result-row">
+
+                    <span>
+                        Interest
+                    </span>
+
+                    <strong id="interestResult">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="interest-result-row final-amount">
+
+                    <span>
+                        Final Amount
+                    </span>
+
+                    <strong id="interestFinalAmount">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- Share & Viral Loop Button -->
+            <button class="affiliate-card share-btn-action" id="shareInterestButton" style="width:100%; margin-top:12px; text-align:center; cursor:pointer;">
+                📤 Share Interest Breakdown
+            </button>
+
+            <!-- Contextual Affiliate Recommendation -->
+            <div class="affiliate-card">
+                <span>💡 Looking to grow your money? <a href="#" target="_blank" rel="noopener">Compare top high-yield savings accounts</a></span>
+            </div>
+
+
+            <!-- Explanation -->
+
+            <details class="interest-explanation">
+
+                <summary>
+                    How was this calculated?
+                </summary>
+
+                <div id="interestExplanation">
+                    Enter your amount, rate and time.
+                </div>
+
+            </details>
+
+        </section>
+
+
+        <!-- Keypad -->
+        <section class="keypad">
+
+            <button class="clear">
+                AC
+            </button>
+
+            <button class="backspace">
+                ⌫
+            </button>
+
+            <button class="percentage">
+                %
+            </button>
+
+            <button
+                class="operator"
+                data-operator="÷">
+                ÷
+            </button>
+
+
+            <button class="number">7</button>
+            <button class="number">8</button>
+            <button class="number">9</button>
+
+            <button
+                class="operator"
+                data-operator="×">
+                ×
+            </button>
+
+
+            <button class="number">4</button>
+            <button class="number">5</button>
+            <button class="number">6</button>
+
+            <button
+                class="operator"
+                data-operator="−">
+                −
+            </button>
+
+
+            <button class="number">1</button>
+            <button class="number">2</button>
+            <button class="number">3</button>
+
+            <button
+                class="operator"
+                data-operator="+">
+                +
+            </button>
+
+
+            <button class="sign">
+                +/-
+            </button>
+
+            <button class="number">
+                0
+            </button>
+
+            <button class="number">
+                .
+            </button>
+
+            <button class="equals">
+                =
+            </button>
+
+        </section>
+
+        <!-- Non-Intrusive Display Ad Space (Option 2) -->
+        <footer class="app-ad-banner">
+            <span class="ad-label">Sponsored</span>
+            <div class="ad-content">Clean, responsive ad space ready for network integration.</div>
+        </footer>
+
+    </main>
+
+
+    <!-- =========================
+         SETTINGS
+         ========================= -->
+
+    <div
+        class="overlay"
+        id="settingsOverlay">
+
+        <div class="panel">
+
+            <div class="panel-head">
+
+                <h2>Settings</h2>
+
+                <button id="closeSettings">
+                    ×
+                </button>
+
+            </div>
+
+
+            <!-- Appearance -->
+
+            <h3>
+                Appearance
+            </h3>
+
+            <button
+                class="theme-option"
+                data-theme="light">
+                ☀ Light
+            </button>
+
+            <button
+                class="theme-option"
+                data-theme="dark">
+                🌙 Dark
+            </button>
+
+            <button
+                class="theme-option"
+                data-theme="golden">
+                🟡 Golden
+            </button>
+
+            <button
+                class="theme-option"
+                data-theme="custom">
+                🖼 Custom Background
+            </button>
+
+
+            <input
+                id="backgroundImageInput"
+                type="file"
+                accept="image/*"
+                hidden>
+
+
+            <button
+                class="remove-background"
+                id="removeBackground">
+                ✕ Remove Custom Background
+            </button>
+
+
+            <!-- Percentage -->
+
+            <h3 style="margin-top:25px;">
+                Percentage Calculation
+            </h3>
+
+            <div class="percentage-options">
+
+                <label class="percentage-option">
+
+                    <input
+                        type="radio"
+                        name="percentageMode"
+                        value="proportional"
+                        id="percentageProportional">
+
+                    <span class="percentage-option-content">
+
+                        <span class="percentage-option-title">
+                            Proportional
+                        </span>
+
+                        <span class="percentage-option-description">
+                            100 + 20% = 120
+                        </span>
+
+                    </span>
+
+                </label>
+
+
+                <label class="percentage-option">
+
+                    <input
+                        type="radio"
+                        name="percentageMode"
+                        value="numerical"
+                        id="percentageNumerical">
+
+                    <span class="percentage-option-content">
+
+                        <span class="percentage-option-title">
+                            Numerical
+                        </span>
+
+                        <span class="percentage-option-description">
+                            100 + 20% = 100.2
+                        </span>
+
+                    </span>
+
+                </label>
+
+            </div>
+
+
+            <!-- Other Settings -->
+
+            <h3 style="margin-top:25px;">
+                Other Settings
+            </h3>
+
+            <label class="setting-row">
+
+                <span>
+                    Large Buttons
+                </span>
+
+                <input
+                    id="largeButtonsToggle"
+                    type="checkbox">
+
+            </label>
+
+            <label class="setting-row">
+                <span>Haptic Feedback</span>
+                <input id="hapticsToggle" type="checkbox" checked>
+            </label>
+
+            <!-- Share App Setting Option -->
+            <button
+                class="theme-option"
+                id="shareAppSettingButton"
+                style="margin-top: 10px; text-align: center; background: var(--operator); color: var(--operator-text);">
+                📤 Share Easy Calculator App
+            </button>
+
+            <!-- Remove Ads Button Properly Placed Inside Panel -->
+            <button class="theme-option" id="removeAdsButton" style="margin-top: 10px; text-align: center; background: var(--operator); color: var(--operator-text);">
+                ⭐ Upgrade to No Ads ($1.99)
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         HISTORY
+         ========================= -->
+
+    <div
+        class="overlay"
+        id="historyOverlay">
+
+        <div class="panel">
+
+            <div class="panel-head">
+
+                <h2>
+                    History
+                </h2>
+
+                <button id="closeHistory">
+                    ×
+                </button>
+
+            </div>
+
+            <div id="historyList"></div>
+
+        </div>
+
+    </div>
+
+
+    <script src="script.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js")
+        .then(() => console.log("Service Worker registered successfully!"))
+        .catch(err => console.log("Service Worker registration failed:", err));
+    });
+  }
+</script>
+
+</body>
+
+</html>
