@@ -2565,7 +2565,7 @@ sciButtons.forEach(function(button) {
 
 
 /* =========================================================
-   VOICE INPUT (WEB SPEECH API)
+   VOICE INPUT (WEB SPEECH API) - PC & MOBILE COMPATIBLE
    ========================================================= */
 
 const micButton = document.getElementById("micButton");
@@ -2596,17 +2596,25 @@ if (SpeechRecognition && micButton) {
 
         let transcript = event.results[0][0].transcript.toLowerCase();
 
-        // Convert spoken operator terms to standardized calculator symbols
+        // 1. Convert actual symbols sent by PC speech engines
         transcript = transcript
-            .replace(/\bplus\b/g, "+")
-            .replace(/\b(minus|subtract|take away|less)\b/g, "−")
-            .replace(/\b(times|multiplied by|multiply by|multiplied|x)\b/g, "×")
-            .replace(/\b(divided by|divide by|divided|divide)\b/g, "÷");
+            .replaceAll("-", "−")
+            .replaceAll("/", "÷")
+            .replaceAll("*", "×");
 
-        expression = transcript;
+        // 2. Convert spoken word variations to standard calculator operators
+        transcript = transcript
+            .replace(/\b(plus|and|add)\b/g, "+")
+            .replace(/\b(minus|subtract|take away|less|dash)\b/g, "−")
+            .replace(/\b(times|multiplied by|multiply by|multiplied|x)\b/g, "×")
+            .replace(/\b(divided by|divide by|divided|divide|division|over|by)\b/g, "÷");
+
+        // 3. Remove extra spaces to ensure proper expression parsing
+        expression = cleanExpression(transcript);
         finalized = false;
         
-        // Output equation on top and calculate answer on result line
+        // Update display and calculate
+        updateDisplay();
         equalsButton.click();
     };
 
@@ -2622,7 +2630,6 @@ if (SpeechRecognition && micButton) {
 } else if (micButton) {
     micButton.style.display = "none";
 }
-
 
 /* =========================================================
    GLOBAL APP SHARE OPTION (SETTINGS)
