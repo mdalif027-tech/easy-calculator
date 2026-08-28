@@ -856,7 +856,7 @@ equalsButton.addEventListener(
         );
 
         calculation.textContent =
-            "";
+            formatExpression(expression) + " =";
 
         result.textContent =
             finalAnswer;
@@ -2036,8 +2036,8 @@ interestModeButton.addEventListener(
 
         scientificCalculator.classList.remove("active");
         scientificBackButton.hidden = true;
-        conversionCalculator.classList.remove("active");
-        conversionBackButton.hidden = true;
+        othersCalculator.classList.remove("active");
+        othersBackButton.hidden = true;
         saleCalculator.classList.remove("active");
         saleBackButton.hidden = true;
 
@@ -2112,13 +2112,56 @@ updateDisplay();
 
 
 /* =========================================================
-   CONVERSION CALCULATOR ELEMENTS
+   OTHERS CALCULATOR (CONVERSION, BMI, AGE)
    ========================================================= */
 
-const conversionModeButton = document.getElementById("conversionModeButton");
-const conversionCalculator = document.getElementById("conversionCalculator");
-const conversionBackButton = document.getElementById("conversionBackButton");
+const othersModeButton = document.getElementById("othersModeButton");
+const othersCalculator = document.getElementById("othersCalculator");
+const othersBackButton = document.getElementById("othersBackButton");
 
+const othersSubConversion = document.getElementById("othersSubConversion");
+const othersSubBMI = document.getElementById("othersSubBMI");
+const othersSubAge = document.getElementById("othersSubAge");
+
+const subSectionConversion = document.getElementById("subSectionConversion");
+const subSectionBMI = document.getElementById("subSectionBMI");
+const subSectionAge = document.getElementById("subSectionAge");
+
+// Sub-nav toggling
+othersSubConversion.addEventListener("click", function() {
+    triggerHaptic();
+    othersSubConversion.classList.add("active");
+    othersSubBMI.classList.remove("active");
+    othersSubAge.classList.remove("active");
+
+    subSectionConversion.style.display = "block";
+    subSectionBMI.style.display = "none";
+    subSectionAge.style.display = "none";
+});
+
+othersSubBMI.addEventListener("click", function() {
+    triggerHaptic();
+    othersSubBMI.classList.add("active");
+    othersSubConversion.classList.remove("active");
+    othersSubAge.classList.remove("active");
+
+    subSectionConversion.style.display = "none";
+    subSectionBMI.style.display = "block";
+    subSectionAge.style.display = "none";
+});
+
+othersSubAge.addEventListener("click", function() {
+    triggerHaptic();
+    othersSubAge.classList.add("active");
+    othersSubConversion.classList.remove("active");
+    othersSubBMI.classList.remove("active");
+
+    subSectionConversion.style.display = "none";
+    subSectionBMI.style.display = "none";
+    subSectionAge.style.display = "block";
+});
+
+// Conversion Logic
 const conversionCategory = document.getElementById("conversionCategory");
 const conversionAmount = document.getElementById("conversionAmount");
 const conversionFromUnit = document.getElementById("conversionFromUnit");
@@ -2217,7 +2260,76 @@ conversionAmount.addEventListener("input", calculateConversion);
 conversionFromUnit.addEventListener("change", calculateConversion);
 conversionToUnit.addEventListener("change", calculateConversion);
 
-conversionModeButton.addEventListener("click", function() {
+// BMI Logic
+const bmiWeight = document.getElementById("bmiWeight");
+const bmiHeight = document.getElementById("bmiHeight");
+const bmiResultVal = document.getElementById("bmiResultVal");
+const bmiCategoryVal = document.getElementById("bmiCategoryVal");
+
+function calculateBMI() {
+    const weight = Number(bmiWeight.value);
+    const heightCm = Number(bmiHeight.value);
+
+    if (!weight || !heightCm || weight <= 0 || heightCm <= 0) {
+        bmiResultVal.textContent = "0";
+        bmiCategoryVal.textContent = "-";
+        return;
+    }
+
+    const heightM = heightCm / 100;
+    const bmi = weight / (heightM * heightM);
+    const roundedBmi = Math.round((bmi + Number.EPSILON) * 10) / 10;
+
+    bmiResultVal.textContent = roundedBmi;
+
+    if (roundedBmi < 18.5) {
+        bmiCategoryVal.textContent = "Underweight";
+    } else if (roundedBmi < 25) {
+        bmiCategoryVal.textContent = "Normal weight";
+    } else if (roundedBmi < 30) {
+        bmiCategoryVal.textContent = "Overweight";
+    } else {
+        bmiCategoryVal.textContent = "Obese";
+    }
+}
+
+bmiWeight.addEventListener("input", calculateBMI);
+bmiHeight.addEventListener("input", calculateBMI);
+
+// Age Logic
+const ageDob = document.getElementById("ageDob");
+const ageFinalResult = document.getElementById("ageFinalResult");
+
+function calculateAge() {
+    if (!ageDob.value) {
+        ageFinalResult.textContent = "0 Years";
+        return;
+    }
+
+    const birthDate = new Date(ageDob.value);
+    const today = new Date();
+
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+
+    if (days < 0) {
+        months--;
+        const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        days += prevMonth.getDate();
+    }
+
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+
+    ageFinalResult.textContent = `${years} yrs, ${months} mos, ${days} days`;
+}
+
+ageDob.addEventListener("change", calculateAge);
+
+othersModeButton.addEventListener("click", function() {
     triggerHaptic();
     display.style.display = "none";
     keypad.style.display = "none";
@@ -2230,16 +2342,16 @@ conversionModeButton.addEventListener("click", function() {
     saleCalculator.classList.remove("active");
     saleBackButton.hidden = true;
 
-    conversionCalculator.classList.add("active");
-    conversionBackButton.hidden = false;
+    othersCalculator.classList.add("active");
+    othersBackButton.hidden = false;
 
     updateConversionDropdowns();
 });
 
-conversionBackButton.addEventListener("click", function() {
+othersBackButton.addEventListener("click", function() {
     triggerHaptic();
-    conversionCalculator.classList.remove("active");
-    conversionBackButton.hidden = true;
+    othersCalculator.classList.remove("active");
+    othersBackButton.hidden = true;
 
     display.style.display = "";
     keypad.style.display = "";
@@ -2337,8 +2449,8 @@ saleModeButton.addEventListener("click", function() {
     
     interestCalculator.classList.remove("active");
     interestBackButton.hidden = true;
-    conversionCalculator.classList.remove("active");
-    conversionBackButton.hidden = true;
+    othersCalculator.classList.remove("active");
+    othersBackButton.hidden = true;
     scientificCalculator.classList.remove("active");
     scientificBackButton.hidden = true;
 
@@ -2375,8 +2487,8 @@ scientificModeButton.addEventListener("click", function() {
 
     interestCalculator.classList.remove("active");
     interestBackButton.hidden = true;
-    conversionCalculator.classList.remove("active");
-    conversionBackButton.hidden = true;
+    othersCalculator.classList.remove("active");
+    othersBackButton.hidden = true;
     saleCalculator.classList.remove("active");
     saleBackButton.hidden = true;
 
@@ -2453,6 +2565,66 @@ sciButtons.forEach(function(button) {
 
 
 /* =========================================================
+   VOICE INPUT (WEB SPEECH API)
+   ========================================================= */
+
+const micButton = document.getElementById("micButton");
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition && micButton) {
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    let isListening = false;
+
+    micButton.addEventListener("click", function() {
+        triggerHaptic();
+        if (!isListening) {
+            micButton.style.opacity = "0.5";
+            try {
+                recognition.start();
+                isListening = true;
+            } catch (err) {
+                console.log("Recognition start error:", err);
+            }
+        }
+    });
+
+    recognition.onresult = function(event) {
+        micButton.style.opacity = "1";
+        isListening = false;
+
+        let transcript = event.results[0][0].transcript.toLowerCase();
+
+        // Convert spoken operator terms to standardized calculator symbols
+        transcript = transcript
+            .replace(/\bplus\b/g, "+")
+            .replace(/\b(minus|subtract|take away|less)\b/g, "−")
+            .replace(/\b(times|multiplied by|multiply by|multiplied|x)\b/g, "×")
+            .replace(/\b(divided by|divide by|divided|divide)\b/g, "÷");
+
+        expression = transcript;
+        finalized = false;
+        
+        // Output equation on top and calculate answer on result line
+        equalsButton.click();
+    };
+
+    recognition.onerror = function(err) {
+        micButton.style.opacity = "1";
+        isListening = false;
+    };
+
+    recognition.onend = function() {
+        micButton.style.opacity = "1";
+        isListening = false;
+    };
+} else if (micButton) {
+    micButton.style.display = "none";
+}
+
+
+/* =========================================================
    GLOBAL APP SHARE OPTION (SETTINGS)
    ========================================================= */
 
@@ -2510,7 +2682,6 @@ if (removeAdsButton) {
     removeAdsButton.addEventListener("click", function() {
         triggerHaptic();
         
-        // (In a real app, you would trigger your payment gateway like Stripe or Google Play Billing here)
         let confirmed = confirm("Would you like to purchase permanent No-Ads for $1.99?");
         
         if (confirmed) {
@@ -2523,12 +2694,12 @@ if (removeAdsButton) {
         }
     });
 }
+
 /* =========================================================
    DESKTOP KEYBOARD SUPPORT
    ========================================================= */
 
 window.addEventListener("keydown", function(event) {
-    // Do not capture keystrokes if typing inside settings inputs or other text boxes
     if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) {
         return;
     }
@@ -2536,7 +2707,6 @@ window.addEventListener("keydown", function(event) {
     const key = event.key;
 
     if (!isNaN(key) || key === ".") {
-        // Find and trigger matching number button
         const btn = Array.from(numberButtons).find(b => b.textContent.trim() === key);
         if (btn) btn.click();
     } else if (key === "+") {
@@ -2549,7 +2719,7 @@ window.addEventListener("keydown", function(event) {
         const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "×");
         if (btn) btn.click();
     } else if (key === "/") {
-        event.preventDefault(); // Prevents browser quick-find search shortcut
+        event.preventDefault();
         const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "÷");
         if (btn) btn.click();
     } else if (key === "Enter" || key === "=") {
