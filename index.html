@@ -24,7 +24,7 @@
                 ← Calculator
             </button>
             
-            <button class="top-button" id="conversionBackButton" hidden>
+            <button class="top-button" id="othersBackButton" hidden>
                 ← Calculator
             </button>
 
@@ -48,7 +48,11 @@
 
 
         <!-- Display -->
-        <section class="display">
+        <section class="display" style="position: relative;">
+
+            <button id="micButton" style="position: absolute; top: 10px; left: 10px; background: transparent; border: none; font-size: 1.2rem; cursor: pointer;" title="Voice Input">
+                🎤
+            </button>
 
             <div
                 class="calculation"
@@ -69,7 +73,7 @@
 
             <button id="scientificModeButton">Scientific</button>
             <button id="saleModeButton">Sale</button>
-            <button id="conversionModeButton">Conversion</button>
+            <button id="othersModeButton">Others</button>
             <button id="interestModeButton">Interest</button>
 
         </nav>
@@ -170,80 +174,139 @@
 
 
         <!-- =========================
-             CONVERSION CALCULATOR
+             OTHERS CALCULATOR (CONVERSION, BMI, AGE)
              ========================= -->
 
-        <section class="interest-calculator" id="conversionCalculator">
+        <section class="interest-calculator" id="othersCalculator">
             
             <div class="interest-header">
-                <h2>Unit Converter</h2>
+                <h2>Multi-Utility Tools</h2>
             </div>
 
-            <!-- Category -->
-            <div class="interest-field">
-                <span>Category</span>
-                <div class="interest-input">
-                    <select id="conversionCategory">
-                        <option value="length">Length</option>
-                        <option value="weight">Weight</option>
-                        <option value="temperature">Temperature</option>
-                    </select>
-                </div>
+            <!-- Sub-Mode Selection -->
+            <div class="interest-type" style="margin-bottom: 15px;">
+                <button class="interest-type-button active" id="othersSubConversion">Units</button>
+                <button class="interest-type-button" id="othersSubBMI">BMI</button>
+                <button class="interest-type-button" id="othersSubAge">Age</button>
             </div>
 
-            <!-- Amount to Convert -->
-            <label class="interest-field">
-                <span>Amount</span>
-                <div class="interest-input">
-                    <input
-                        id="conversionAmount"
-                        type="number"
-                        inputmode="decimal"
-                        placeholder="0">
+            <!-- SUB-SECTION 1: CONVERSION -->
+            <div id="subSectionConversion">
+                <div class="interest-field">
+                    <span>Category</span>
+                    <div class="interest-input">
+                        <select id="conversionCategory">
+                            <option value="length">Length</option>
+                            <option value="weight">Weight</option>
+                            <option value="temperature">Temperature</option>
+                        </select>
+                    </div>
                 </div>
-            </label>
 
-            <!-- From Unit -->
-            <label class="interest-field">
-                <span>From</span>
-                <div class="interest-input">
-                    <select id="conversionFromUnit">
-                        <option value="meters">Meters</option>
-                        <option value="feet">Feet</option>
-                        <option value="inches">Inches</option>
-                        <option value="centimeters">Centimeters</option>
-                    </select>
-                </div>
-            </label>
+                <label class="interest-field">
+                    <span>Amount</span>
+                    <div class="interest-input">
+                        <input id="conversionAmount" type="number" inputmode="decimal" placeholder="0">
+                    </div>
+                </label>
 
-            <!-- To Unit -->
-            <label class="interest-field">
-                <span>To</span>
-                <div class="interest-input">
-                    <select id="conversionToUnit">
-                        <option value="feet">Feet</option>
-                        <option value="meters">Meters</option>
-                        <option value="inches">Inches</option>
-                        <option value="centimeters">Centimeters</option>
-                    </select>
-                </div>
-            </label>
+                <label class="interest-field">
+                    <span>From</span>
+                    <div class="interest-input">
+                        <select id="conversionFromUnit">
+                            <option value="meters">Meters</option>
+                            <option value="feet">Feet</option>
+                            <option value="inches">Inches</option>
+                            <option value="centimeters">Centimeters</option>
+                        </select>
+                    </div>
+                </label>
 
-            <!-- Result -->
-            <div class="interest-result">
-                <div class="interest-result-row final-amount">
-                    <span>Result</span>
-                    <strong id="conversionFinalResult">0</strong>
+                <label class="interest-field">
+                    <span>To</span>
+                    <div class="interest-input">
+                        <select id="conversionToUnit">
+                            <option value="feet">Feet</option>
+                            <option value="meters">Meters</option>
+                            <option value="inches">Inches</option>
+                            <option value="centimeters">Centimeters</option>
+                        </select>
+                    </div>
+                </label>
+
+                <div class="interest-result">
+                    <div class="interest-result-row final-amount">
+                        <span>Result</span>
+                        <strong id="conversionFinalResult">0</strong>
+                    </div>
                 </div>
+
+                <details class="interest-explanation">
+                    <summary>How does this work?</summary>
+                    <div id="conversionExplanation">
+                        Select a category, enter an amount, and choose your units to convert.
+                    </div>
+                </details>
             </div>
 
-            <!-- Explanation -->
-            <details class="interest-explanation">
-                <summary>How does this work?</summary>
-                <div id="conversionExplanation">
-                    Select a category, enter an amount, and choose your units to convert.
+            <!-- SUB-SECTION 2: BMI CALCULATOR -->
+            <div id="subSectionBMI" style="display: none;">
+                <label class="interest-field">
+                    <span>Weight (kg)</span>
+                    <div class="interest-input">
+                        <input id="bmiWeight" type="number" inputmode="decimal" placeholder="0">
+                    </div>
+                </label>
+
+                <label class="interest-field">
+                    <span>Height (cm)</span>
+                    <div class="interest-input">
+                        <input id="bmiHeight" type="number" inputmode="decimal" placeholder="0">
+                    </div>
+                </label>
+
+                <div class="interest-result">
+                    <div class="interest-result-row">
+                        <span>BMI Index</span>
+                        <strong id="bmiResultVal">0</strong>
+                    </div>
+                    <div class="interest-result-row final-amount">
+                        <span>Category</span>
+                        <strong id="bmiCategoryVal">-</strong>
+                    </div>
                 </div>
-            </details>
+
+                <details class="interest-explanation">
+                    <summary>BMI Information</summary>
+                    <div>
+                        BMI = weight (kg) / [height (m)]². Normal range is 18.5 - 24.9.
+                    </div>
+                </details>
+            </div>
+
+            <!-- SUB-SECTION 3: AGE CALCULATOR -->
+            <div id="subSectionAge" style="display: none;">
+                <label class="interest-field">
+                    <span>Date of Birth</span>
+                    <div class="interest-input">
+                        <input id="ageDob" type="date">
+                    </div>
+                </label>
+
+                <div class="interest-result">
+                    <div class="interest-result-row final-amount">
+                        <span>Age</span>
+                        <strong id="ageFinalResult">0 Years</strong>
+                    </div>
+                </div>
+
+                <details class="interest-explanation">
+                    <summary>How age is calculated</summary>
+                    <div id="ageExplanation">
+                        Calculates your exact age based on today's date.
+                    </div>
+                </details>
+            </div>
 
         </section>
 
