@@ -1,6 +1,6 @@
 /* =========================================================
    EASY CALCULATOR
-   COMPLETE UPGRADED SCRIPT (NO BORDERS / NO MEMORY)
+   COMPLETE MERGED & UPGRADED SCRIPT
    ========================================================= */
 
 /* =========================================================
@@ -19,103 +19,45 @@ function triggerHaptic() {
    BASIC ELEMENTS
    ========================================================= */
 
-const numberButtons =
-    document.querySelectorAll(".number");
-
-const operatorButtons =
-    document.querySelectorAll(".operator");
-
-const result =
-    document.getElementById("result");
-
-const calculation =
-    document.getElementById("calculation");
-
-const equalsButton =
-    document.querySelector(".equals");
-
-const clearButton =
-    document.querySelector(".clear");
-
-const backspaceButton =
-    document.querySelector(".backspace");
-
-const signButton =
-    document.querySelector(".sign");
-
-const percentageButton =
-    document.querySelector(".percentage");
+const numberButtons = document.querySelectorAll(".number");
+const operatorButtons = document.querySelectorAll(".operator");
+const result = document.getElementById("result");
+const calculation = document.getElementById("calculation");
+const equalsButton = document.querySelector(".equals");
+const clearButton = document.querySelector(".clear");
+const backspaceButton = document.querySelector(".backspace");
+const signButton = document.querySelector(".sign");
+const percentageButton = document.querySelector(".percentage");
 
 
 /* =========================================================
    SETTINGS
    ========================================================= */
 
-const settingsButton =
-    document.getElementById("settingsButton");
-
-const settingsOverlay =
-    document.getElementById("settingsOverlay");
-
-const closeSettings =
-    document.getElementById("closeSettings");
+const settingsButton = document.getElementById("settingsButton");
+const settingsOverlay = document.getElementById("settingsOverlay");
+const closeSettings = document.getElementById("closeSettings");
 
 
 /* =========================================================
    HISTORY
    ========================================================= */
 
-const historyButton =
-    document.getElementById("historyButton");
-
-const historyOverlay =
-    document.getElementById("historyOverlay");
-
-const closeHistory =
-    document.getElementById("closeHistory");
-
-const historyList =
-    document.getElementById("historyList");
+const historyButton = document.getElementById("historyButton");
+const historyOverlay = document.getElementById("historyOverlay");
+const closeHistory = document.getElementById("closeHistory");
+const historyList = document.getElementById("historyList");
 
 
 /* =========================================================
-   BACKGROUND
+   BACKGROUND & UI SETTINGS
    ========================================================= */
 
-const backgroundImageInput =
-    document.getElementById(
-        "backgroundImageInput"
-    );
-
-const removeBackground =
-    document.getElementById(
-        "removeBackground"
-    );
-
-
-/* =========================================================
-   LARGE BUTTONS
-   ========================================================= */
-
-const largeButtonsToggle =
-    document.getElementById(
-        "largeButtonsToggle"
-    );
-
-
-/* =========================================================
-   PERCENTAGE SETTINGS
-   ========================================================= */
-
-const percentageProportional =
-    document.getElementById(
-        "percentageProportional"
-    );
-
-const percentageNumerical =
-    document.getElementById(
-        "percentageNumerical"
-    );
+const backgroundImageInput = document.getElementById("backgroundImageInput");
+const removeBackground = document.getElementById("removeBackground");
+const largeButtonsToggle = document.getElementById("largeButtonsToggle");
+const percentageProportional = document.getElementById("percentageProportional");
+const percentageNumerical = document.getElementById("percentageNumerical");
 
 
 /* =========================================================
@@ -123,1992 +65,687 @@ const percentageNumerical =
    ========================================================= */
 
 let expression = "";
-
 let finalized = false;
+let percentageMode = localStorage.getItem("percentageMode") || "proportional";
 
-let percentageMode =
-    localStorage.getItem(
-        "percentageMode"
-    ) || "proportional";
-
-
-const operators = [
-    "+",
-    "−",
-    "×",
-    "÷"
-];
+const operators = ["+", "−", "×", "÷", "^", "√"];
 
 
 /* =========================================================
-   OPERATOR HELPER
+   EXPRESSION HELPERS & FORMATTING
    ========================================================= */
 
 function isOperator(value) {
-
     return operators.includes(value);
-
 }
-
-
-/* =========================================================
-   EXPRESSION HELPERS
-   ========================================================= */
 
 function cleanExpression(value) {
-
     return value.replace(/\s/g, "");
-
 }
 
-
 function formatExpression(value) {
-
     return value
         .replaceAll("×", " × ")
         .replaceAll("÷", " ÷ ")
         .replaceAll("+", " + ")
         .replaceAll("−", " − ")
+        .replaceAll("^", " ^ ")
+        .replaceAll("√", " √ ")
         .replace(/\s+/g, " ")
         .trim();
-
 }
-
-
-/* =========================================================
-   TRAILING NUMBER
-   ========================================================= */
-
-function getTrailingNumber() {
-
-    const clean =
-        cleanExpression(expression);
-
-    const match =
-        clean.match(
-            /-?\d+(?:\.\d*)?%?$/
-        );
-
-    return match
-        ? match[0]
-        : "";
-
-}
-
-
-/* =========================================================
-   REPLACE TRAILING NUMBER
-   ========================================================= */
-
-function replaceTrailingNumber(newNumber) {
-
-    const clean =
-        cleanExpression(expression);
-
-    const match =
-        clean.match(
-            /-?\d+(?:\.\d*)?%?$/
-        );
-
-    if (!match) {
-
-        expression += newNumber;
-
-        return;
-
-    }
-
-    expression =
-        clean.slice(
-            0,
-            match.index
-        ) +
-        newNumber;
-
-}
-
-
-/* =========================================================
-   FORMAT RESULT
-   ========================================================= */
 
 function formatResult(value) {
+    if (typeof value === "string") return value;
+    if (!Number.isFinite(value)) return "Error";
 
-    if (
-        typeof value === "string"
-    ) {
-
-        return value;
-
+    if (Math.abs(value) > 1e12 || (Math.abs(value) < 1e-6 && value !== 0)) {
+        return value.toExponential(6);
     }
 
-    if (
-        !Number.isFinite(value)
-    ) {
-
-        return "Error";
-
-    }
-
-    const rounded =
-        Math.round(
-            (
-                value +
-                Number.EPSILON
-            ) *
-            1000000000000
-        ) /
-        1000000000000;
-
+    const rounded = Math.round((value + Number.EPSILON) * 1e10) / 1e10;
     return String(rounded);
+}
 
+function factorial(n) {
+    if (n < 0 || !Number.isInteger(n)) return NaN;
+    if (n === 0 || n === 1) return 1;
+    let res = 1;
+    for (let i = 2; i <= n; i++) res *= i;
+    return res;
 }
 
 
 /* =========================================================
-   EVALUATE EXPRESSION
+   ADVANCED SHUNTING-YARD PARSER & EVALUATOR (PEMDAS)
    ========================================================= */
 
+function tokenize(str) {
+    const tokens = [];
+    let i = 0;
+
+    while (i < str.length) {
+        const char = str[i];
+
+        if (/\d|\./.test(char)) {
+            let num = "";
+            while (i < str.length && (/\d|\./.test(str[i]))) {
+                num += str[i];
+                i++;
+            }
+            if (i < str.length && str[i] === "%") {
+                num += "%";
+                i++;
+            }
+            tokens.push(num);
+            continue;
+        }
+
+        if (char === "π" || char === "e") {
+            tokens.push(char);
+            i++;
+            continue;
+        }
+
+        if (isOperator(char) || char === "(" || char === ")" || char === "!") {
+            tokens.push(char);
+            i++;
+            continue;
+        }
+
+        i++;
+    }
+    return tokens;
+}
+
 function evaluateExpression(input) {
+    let raw = cleanExpression(input);
+    if (!raw) return 0;
 
-    let value =
-        cleanExpression(input);
-
-    while (
-        value.length > 0 &&
-        isOperator(
-            value.at(-1)
-        )
-    ) {
-
-        value =
-            value.slice(
-                0,
-                -1
-            );
-
+    while (raw.length > 0 && isOperator(raw.at(-1))) {
+        raw = raw.slice(0, -1);
     }
 
-    if (!value) {
+    try {
+        let tokens = tokenize(raw);
+        if (tokens.length === 0) return 0;
 
-        return 0;
+        let processedTokens = [];
+        for (let i = 0; i < tokens.length; i++) {
+            let curr = tokens[i];
+            let prev = tokens[i - 1];
 
-    }
-
-    const tokens =
-        value
-            .split(
-                /([+−×÷])/
-            )
-            .filter(Boolean);
-
-    let numbers = [];
-
-    let ops = [];
-
-    for (
-        const token of tokens
-    ) {
-
-        if (
-            isOperator(token)
-        ) {
-
-            ops.push(token);
-
+            if (prev && (
+                (!isNaN(prev) || prev.endsWith("%") || prev === ")" || prev === "π" || prev === "e") &&
+                (!isNaN(curr) || curr === "(" || curr === "π" || curr === "e")
+            )) {
+                processedTokens.push("×");
+            }
+            processedTokens.push(curr);
         }
 
-        else {
+        const outputQueue = [];
+        const operatorStack = [];
+        const precedence = { "+": 1, "−": 1, "×": 2, "÷": 2, "^": 3, "√": 3 };
+        const associativity = { "+": "L", "−": "L", "×": "L", "÷": "L", "^": "R", "√": "R" };
 
-            let text =
-                token;
+        for (let i = 0; i < processedTokens.length; i++) {
+            let token = processedTokens[i];
 
-            let percentage =
-                false;
+            if (!isNaN(token) || token.endsWith("%") || token === "π" || token === "e") {
+                outputQueue.push(token);
+            } else if (token === "!") {
+                outputQueue.push(token);
+            } else if (isOperator(token)) {
+                if (token === "−" && (i === 0 || processedTokens[i - 1] === "(" || isOperator(processedTokens[i - 1]))) {
+                    outputQueue.push("0");
+                }
 
-            if (
-                text.endsWith("%")
-            ) {
-
-                percentage =
-                    true;
-
-                text =
-                    text.slice(
-                        0,
-                        -1
-                    );
-
+                while (
+                    operatorStack.length > 0 &&
+                    operatorStack.at(-1) !== "(" &&
+                    (
+                        (associativity[token] === "L" && precedence[token] <= precedence[operatorStack.at(-1)]) ||
+                        (associativity[token] === "R" && precedence[token] < precedence[operatorStack.at(-1)])
+                    )
+                ) {
+                    outputQueue.push(operatorStack.pop());
+                }
+                operatorStack.push(token);
+            } else if (token === "(") {
+                operatorStack.push(token);
+            } else if (token === ")") {
+                while (operatorStack.length > 0 && operatorStack.at(-1) !== "(") {
+                    outputQueue.push(operatorStack.pop());
+                }
+                operatorStack.pop();
             }
-
-            const number =
-                Number(text);
-
-            if (
-                !Number.isFinite(
-                    number
-                )
-            ) {
-
-                return null;
-
-            }
-
-            numbers.push({
-
-                value:
-                    number,
-
-                percentage:
-                    percentage
-
-            });
-
         }
 
-    }
+        while (operatorStack.length > 0) {
+            outputQueue.push(operatorStack.pop());
+        }
 
-    if (
-        numbers.length === 1 &&
-        numbers[0].percentage
-    ) {
+        const stack = [];
+        for (let token of outputQueue) {
+            if (token === "π") {
+                stack.push(Math.PI);
+            } else if (token === "e") {
+                stack.push(Math.E);
+            } else if (token.endsWith("%")) {
+                let val = Number(token.slice(0, -1));
+                if (percentageMode === "proportional" && stack.length > 0) {
+                    val = stack[stack.length - 1] * (val / 100);
+                } else {
+                    val = val / 100;
+                }
+                stack.push(val);
+            } else if (!isNaN(token)) {
+                stack.push(Number(token));
+            } else if (token === "!") {
+                let a = stack.pop();
+                stack.push(factorial(a));
+            } else if (isOperator(token)) {
+                let b = stack.pop();
+                let a = stack.length > 0 ? stack.pop() : 0;
 
-        return (
-            numbers[0].value /
-            100
-        );
+                switch (token) {
+                    case "+": stack.push(a + b); break;
+                    case "−": stack.push(a - b); break;
+                    case "×": stack.push(a * b); break;
+                    case "÷":
+                        if (b === 0) return "Cannot divide by 0";
+                        stack.push(a / b);
+                        break;
+                    case "^": stack.push(Math.pow(a, b)); break;
+                    case "√":
+                        if (a === 0) return "Error";
+                        stack.push(Math.pow(b, 1 / a));
+                        break;
+                }
+            }
+        }
 
-    }
-
-    if (
-        numbers.length !==
-        ops.length + 1
-    ) {
-
+        return stack.length === 1 ? stack[0] : null;
+    } catch (e) {
         return null;
-
     }
-
-    let values = [
-        numbers[0].value
-    ];
-
-    let remainingOps = [];
-
-    for (
-        let i = 0;
-        i < ops.length;
-        i++
-    ) {
-
-        const operator =
-            ops[i];
-
-        const next =
-            numbers[i + 1];
-
-        let nextValue =
-            next.value;
-
-        if (
-            next.percentage
-        ) {
-
-            nextValue =
-                next.value / 100;
-
-        }
-
-        if (
-            operator === "×"
-        ) {
-
-            values[
-                values.length - 1
-            ] *= nextValue;
-
-        }
-
-        else if (
-            operator === "÷"
-        ) {
-
-            if (
-                nextValue === 0
-            ) {
-
-                return "Cannot divide by 0";
-
-            }
-
-            values[
-                values.length - 1
-            ] /= nextValue;
-
-        }
-
-        else {
-
-            remainingOps.push(
-                operator
-            );
-
-            values.push(
-                next.value
-            );
-
-        }
-
-    }
-
-    let answer =
-        values[0];
-
-    for (
-        let i = 0;
-        i < remainingOps.length;
-        i++
-    ) {
-
-        const operator =
-            remainingOps[i];
-
-        const originalNumber =
-            numbers[i + 1];
-
-        let nextValue =
-            values[i + 1];
-
-        if (
-            percentageMode ===
-            "proportional" &&
-
-            originalNumber.percentage
-        ) {
-
-            nextValue =
-                answer *
-                (
-                    originalNumber.value /
-                    100
-                );
-
-        }
-
-        else if (
-            originalNumber.percentage
-        ) {
-
-            nextValue =
-                originalNumber.value /
-                100;
-
-        }
-
-        if (
-            operator === "+"
-        ) {
-
-            answer +=
-                nextValue;
-
-        }
-
-        else if (
-            operator === "−"
-        ) {
-
-            answer -=
-                nextValue;
-
-        }
-
-    }
-
-    return answer;
-
 }
 
 
 /* =========================================================
-   UPDATE DISPLAY
+   DISPLAY UPDATES & INPUT HANDLERS
    ========================================================= */
 
 function updateDisplay() {
+    calculation.textContent = formatExpression(expression);
 
-    calculation.textContent =
-        formatExpression(
-            expression
-        );
-
-    if (
-        !expression
-    ) {
-
-        result.textContent =
-            "0";
-
+    if (!expression) {
+        result.textContent = "0";
         return;
-
     }
 
-    const answer =
-        evaluateExpression(
-            expression
-        );
-
-    if (
-        answer === null
-    ) {
-
-        const current =
-            getTrailingNumber();
-
-        result.textContent =
-            current || "0";
-
-        return;
-
-    }
-
-    result.textContent =
-        formatResult(
-            answer
-        );
-
+    const answer = evaluateExpression(expression);
+    result.textContent = answer === null ? "0" : formatResult(answer);
 }
 
-
-/* =========================================================
-   NUMBER BUTTONS
-   ========================================================= */
-
-numberButtons.forEach(
-    function(button) {
-
-        button.addEventListener(
-            "click",
-            function() {
-                triggerHaptic();
-
-                const number =
-                    button.textContent.trim();
-
-                if (
-                    finalized
-                ) {
-
-                    expression = "";
-
-                    finalized =
-                        false;
-
-                }
-
-                const current =
-                    getTrailingNumber();
-
-                if (
-                    number === "."
-                ) {
-
-                    if (
-                        current.includes(".")
-                    ) {
-
-                        return;
-
-                    }
-
-                    if (
-                        !current
-                    ) {
-
-                        expression +=
-                            "0.";
-
-                    }
-
-                    else if (
-                        current === "-"
-                    ) {
-
-                        expression +=
-                            "0.";
-
-                    }
-
-                    else {
-
-                        expression +=
-                            ".";
-
-                    }
-
-                    updateDisplay();
-
-                    return;
-
-                }
-
-                if (
-                    current === "0"
-                ) {
-
-                    replaceTrailingNumber(
-                        number
-                    );
-
-                }
-
-                else {
-
-                    expression +=
-                        number;
-
-                }
-
-                updateDisplay();
-
-            }
-        );
-
-    }
-);
-
-
-/* =========================================================
-   OPERATOR BUTTONS
-   ========================================================= */
-
-operatorButtons.forEach(
-    function(button) {
-
-        button.addEventListener(
-            "click",
-            function() {
-                triggerHaptic();
-
-                const operator =
-                    button.dataset.operator;
-
-                if (
-                    finalized
-                ) {
-
-                    expression =
-                        result.textContent;
-
-                    finalized =
-                        false;
-
-                }
-
-                if (
-                    !expression
-                ) {
-
-                    if (
-                        operator === "−"
-                    ) {
-
-                        expression =
-                            "−";
-
-                    }
-
-                    return;
-
-                }
-
-                if (
-                    isOperator(
-                        expression.at(-1)
-                    )
-                ) {
-
-                    expression =
-                        expression.slice(
-                            0,
-                            -1
-                        ) +
-                        operator;
-
-                }
-
-                else {
-
-                    expression +=
-                        operator;
-
-                }
-
-                updateDisplay();
-
-            }
-        );
-
-    }
-);
-
-
-/* =========================================================
-   PERCENTAGE
-   ========================================================= */
-
-percentageButton.addEventListener(
-    "click",
-    function() {
+numberButtons.forEach(button => {
+    button.addEventListener("click", () => {
         triggerHaptic();
+        const number = button.textContent.trim();
 
-        if (
-            finalized
-        ) {
-
-            expression =
-                result.textContent;
-
-            finalized =
-                false;
-
-        }
-
-        const current =
-            getTrailingNumber();
-
-        if (
-            !current
-        ) {
-
-            return;
-
-        }
-
-        if (
-            current.endsWith("%")
-        ) {
-
-            return;
-
-        }
-
-        expression +=
-            "%";
-
-        updateDisplay();
-
-    }
-);
-
-
-/* =========================================================
-   EQUALS
-   ========================================================= */
-
-equalsButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        if (
-            !expression
-        ) {
-
-            return;
-
-        }
-
-        const answer =
-            evaluateExpression(
-                expression
-            );
-
-        if (
-            answer === null
-        ) {
-
-            return;
-
-        }
-
-        const finalAnswer =
-            formatResult(
-                answer
-            );
-
-        if (
-            finalAnswer ===
-            "Cannot divide by 0"
-        ) {
-
-            result.textContent =
-                finalAnswer;
-
-            return;
-
-        }
-
-        addHistory(
-            formatExpression(
-                expression
-            ),
-            finalAnswer
-        );
-
-        calculation.textContent =
-            formatExpression(expression) + " =";
-
-        result.textContent =
-            finalAnswer;
-
-        expression =
-            finalAnswer;
-
-        finalized =
-            true;
-
-    }
-);
-
-
-/* =========================================================
-   AC
-   ========================================================= */
-
-clearButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        expression = "";
-
-        finalized =
-            false;
-
-        calculation.textContent =
-            "";
-
-        result.textContent =
-            "0";
-
-    }
-);
-
-
-/* =========================================================
-   BACKSPACE
-   ========================================================= */
-
-backspaceButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        if (
-            finalized
-        ) {
-
+        if (finalized) {
             expression = "";
-
-            finalized =
-                false;
-
+            finalized = false;
         }
 
-        expression =
-            expression.slice(
-                0,
-                -1
-            );
-
+        expression += number;
         updateDisplay();
+    });
+});
 
-    }
-);
-
-
-/* =========================================================
-   +/-
-   ========================================================= */
-
-signButton.addEventListener(
-    "click",
-    function() {
+operatorButtons.forEach(button => {
+    button.addEventListener("click", () => {
         triggerHaptic();
+        const operator = button.dataset.operator;
 
-        if (
-            finalized
-        ) {
-
-            expression =
-                result.textContent;
-
-            finalized =
-                false;
-
+        if (finalized) {
+            expression = result.textContent;
+            finalized = false;
         }
 
-        const current =
-            getTrailingNumber();
-
-        if (
-            !current
-        ) {
-
+        if (!expression && operator === "−") {
+            expression = "−";
+            updateDisplay();
             return;
-
         }
 
-        if (
-            current.endsWith("%")
-        ) {
-
-            return;
-
-        }
-
-        if (
-            current.startsWith("-")
-        ) {
-
-            replaceTrailingNumber(
-                current.substring(1)
-            );
-
-        }
-
-        else {
-
-            replaceTrailingNumber(
-                "-" + current
-            );
-
+        if (expression && isOperator(expression.at(-1))) {
+            expression = expression.slice(0, -1) + operator;
+        } else {
+            expression += operator;
         }
 
         updateDisplay();
+    });
+});
 
+percentageButton.addEventListener("click", () => {
+    triggerHaptic();
+    if (finalized) finalized = false;
+    expression += "%";
+    updateDisplay();
+});
+
+equalsButton.addEventListener("click", () => {
+    triggerHaptic();
+    if (!expression) return;
+
+    const answer = evaluateExpression(expression);
+    if (answer === null) return;
+
+    const finalAnswer = formatResult(answer);
+    if (finalAnswer === "Cannot divide by 0" || finalAnswer === "Error") {
+        result.textContent = finalAnswer;
+        return;
     }
-);
+
+    addHistory(formatExpression(expression), finalAnswer);
+    calculation.textContent = formatExpression(expression) + " =";
+    result.textContent = finalAnswer;
+    expression = finalAnswer;
+    finalized = true;
+});
+
+clearButton.addEventListener("click", () => {
+    triggerHaptic();
+    expression = "";
+    finalized = false;
+    calculation.textContent = "";
+    result.textContent = "0";
+});
+
+backspaceButton.addEventListener("click", () => {
+    triggerHaptic();
+    if (finalized) {
+        expression = "";
+        finalized = false;
+    } else {
+        expression = expression.slice(0, -1);
+    }
+    updateDisplay();
+});
+
+signButton.addEventListener("click", () => {
+    triggerHaptic();
+    if (finalized) {
+        expression = result.textContent;
+        finalized = false;
+    }
+
+    if (expression.startsWith("−")) {
+        expression = expression.substring(1);
+    } else {
+        expression = "−" + expression;
+    }
+    updateDisplay();
+});
 
 
 /* =========================================================
-   SETTINGS
+   SETTINGS OVERLAY & PREFERENCES
    ========================================================= */
 
-settingsButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-        settingsOverlay.classList.add(
-            "active"
-        );
+settingsButton.addEventListener("click", () => {
+    triggerHaptic();
+    settingsOverlay.classList.add("active");
+});
 
-    }
-);
+closeSettings.addEventListener("click", () => {
+    triggerHaptic();
+    settingsOverlay.classList.remove("active");
+});
 
-
-closeSettings.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-        settingsOverlay.classList.remove(
-            "active"
-        );
-
-    }
-);
-
-
-settingsOverlay.addEventListener(
-    "click",
-    function(event) {
-
-        if (
-            event.target ===
-            settingsOverlay
-        ) {
-
-            settingsOverlay.classList.remove(
-                "active"
-            );
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   PERCENTAGE SETTINGS
-   ========================================================= */
+settingsOverlay.addEventListener("click", (e) => {
+    if (e.target === settingsOverlay) settingsOverlay.classList.remove("active");
+});
 
 function updatePercentageSetting() {
-
-    percentageProportional.checked =
-        percentageMode ===
-        "proportional";
-
-    percentageNumerical.checked =
-        percentageMode ===
-        "numerical";
-
+    percentageProportional.checked = percentageMode === "proportional";
+    percentageNumerical.checked = percentageMode === "numerical";
 }
 
-
-percentageProportional.addEventListener(
-    "change",
-    function() {
-
-        if (
-            percentageProportional.checked
-        ) {
-
-            percentageMode =
-                "proportional";
-
-            localStorage.setItem(
-                "percentageMode",
-                "proportional"
-            );
-
-            updateDisplay();
-
-        }
-
+percentageProportional.addEventListener("change", () => {
+    if (percentageProportional.checked) {
+        percentageMode = "proportional";
+        localStorage.setItem("percentageMode", "proportional");
+        updateDisplay();
     }
-);
+});
 
-
-percentageNumerical.addEventListener(
-    "change",
-    function() {
-
-        if (
-            percentageNumerical.checked
-        ) {
-
-            percentageMode =
-                "numerical";
-
-            localStorage.setItem(
-                "percentageMode",
-                "numerical"
-            );
-
-            updateDisplay();
-
-        }
-
+percentageNumerical.addEventListener("change", () => {
+    if (percentageNumerical.checked) {
+        percentageMode = "numerical";
+        localStorage.setItem("percentageMode", "numerical");
+        updateDisplay();
     }
-);
+});
 
-
-/* =========================================================
-   THEMES
-   ========================================================= */
-
-const themeButtons =
-    document.querySelectorAll(
-        ".theme-option"
-    );
-
-themeButtons.forEach(
-    function(button) {
-
-        button.addEventListener(
-            "click",
-            function() {
-                triggerHaptic();
-
-                const theme =
-                    button.dataset.theme;
-
-                if (
-                    theme === "custom"
-                ) {
-
-                    backgroundImageInput.click();
-
-                    return;
-
-                }
-
-                document.body.style.backgroundImage =
-                    "";
-
-                if (
-                    theme === "light"
-                ) {
-
-                    document.body.removeAttribute(
-                        "data-theme"
-                    );
-
-                }
-
-                else {
-
-                    document.body.setAttribute(
-                        "data-theme",
-                        theme
-                    );
-
-                }
-
-                localStorage.setItem(
-                    "calculatorTheme",
-                    theme
-                );
-
-            }
-        );
-
-    }
-);
-
-
-/* =========================================================
-   CUSTOM BACKGROUND
-   ========================================================= */
-
-backgroundImageInput.addEventListener(
-    "change",
-    function() {
-
-        const file =
-            backgroundImageInput.files[0];
-
-        if (
-            !file
-        ) {
-
-            return;
-
-        }
-
-        const reader =
-            new FileReader();
-
-        reader.addEventListener(
-            "load",
-            function() {
-
-                const image =
-                    reader.result;
-
-                document.body.style.backgroundImage =
-                    `url("${image}")`;
-
-                document.body.style.backgroundSize =
-                    "cover";
-
-                document.body.style.backgroundPosition =
-                    "center";
-
-                document.body.style.backgroundRepeat =
-                    "no-repeat";
-
-                document.body.removeAttribute(
-                    "data-theme"
-                );
-
-                localStorage.setItem(
-                    "calculatorCustomBackground",
-                    image
-                );
-
-                localStorage.setItem(
-                    "calculatorTheme",
-                    "custom"
-                );
-
-            }
-        );
-
-        reader.readAsDataURL(file);
-
-    }
-);
-
-
-/* =========================================================
-   REMOVE CUSTOM BACKGROUND
-   ========================================================= */
-
-removeBackground.addEventListener(
-    "click",
-    function() {
+const themeButtons = document.querySelectorAll(".theme-option");
+themeButtons.forEach(button => {
+    button.addEventListener("click", () => {
         triggerHaptic();
+        const theme = button.dataset.theme;
 
-        document.body.style.backgroundImage =
-            "";
+        if (theme === "custom") {
+            backgroundImageInput.click();
+            return;
+        }
 
-        document.body.removeAttribute(
-            "data-theme"
-        );
+        document.body.style.backgroundImage = "";
+        if (theme === "light") {
+            document.body.removeAttribute("data-theme");
+        } else {
+            document.body.setAttribute("data-theme", theme);
+        }
+        localStorage.setItem("calculatorTheme", theme);
+    });
+});
 
-        localStorage.removeItem(
-            "calculatorCustomBackground"
-        );
+backgroundImageInput.addEventListener("change", () => {
+    const file = backgroundImageInput.files[0];
+    if (!file) return;
 
-        localStorage.setItem(
-            "calculatorTheme",
-            "light"
-        );
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+        const image = reader.result;
+        document.body.style.backgroundImage = `url("${image}")`;
+        document.body.style.backgroundSize = "cover";
+        document.body.style.backgroundPosition = "center";
+        document.body.style.backgroundRepeat = "no-repeat";
+        document.body.removeAttribute("data-theme");
 
-    }
-);
+        localStorage.setItem("calculatorCustomBackground", image);
+        localStorage.setItem("calculatorTheme", "custom");
+    });
+    reader.readAsDataURL(file);
+});
+
+removeBackground.addEventListener("click", () => {
+    triggerHaptic();
+    document.body.style.backgroundImage = "";
+    document.body.removeAttribute("data-theme");
+    localStorage.removeItem("calculatorCustomBackground");
+    localStorage.setItem("calculatorTheme", "light");
+});
 
 
 /* =========================================================
-   HISTORY
+   INTERACTIVE HISTORY MANAGEMENT
    ========================================================= */
 
-let history =
-    JSON.parse(
-        localStorage.getItem(
-            "calculatorHistory"
-        ) || "[]"
-    );
+let history = JSON.parse(localStorage.getItem("calculatorHistory") || "[]");
 
-
-function addHistory(
-    equation,
-    answer
-) {
-
-    history.unshift({
-
-        equation:
-            equation,
-
-        answer:
-            answer
-
-    });
-
-    history =
-        history.slice(
-            0,
-            20
-        );
-
-    localStorage.setItem(
-        "calculatorHistory",
-        JSON.stringify(
-            history
-        )
-    );
-
+function addHistory(equation, answer) {
+    history.unshift({ equation, answer });
+    history = history.slice(0, 25);
+    localStorage.setItem("calculatorHistory", JSON.stringify(history));
 }
-
 
 function escapeHtml(value) {
-
     return String(value)
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
-
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
-
 
 function renderHistory() {
-
-    if (
-        history.length === 0
-    ) {
-
-        historyList.innerHTML =
-            '<p class="empty-history">No calculations yet.</p>';
-
+    if (history.length === 0) {
+        historyList.innerHTML = '<p class="empty-history">No calculations yet.</p>';
         return;
-
     }
 
-    historyList.innerHTML =
-        history
-            .map(
-                function(item) {
+    historyList.innerHTML = history.map((item, index) => `
+        <div class="history-item" data-index="${index}" style="cursor: pointer; padding: 8px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+            <div style="font-size: 0.9em; opacity: 0.7;">${escapeHtml(item.equation)}</div>
+            <strong style="font-size: 1.1em;">= ${escapeHtml(item.answer)}</strong>
+        </div>
+    `).join("");
 
-                    return `
-                        <div class="history-item">
-
-                            <div>
-                                ${escapeHtml(
-                                    item.equation
-                                )}
-                            </div>
-
-                            <strong>
-                                = ${escapeHtml(
-                                    item.answer
-                                )}
-                            </strong>
-
-                        </div>
-                    `;
-
-                }
-            )
-            .join("");
-
+    document.querySelectorAll(".history-item").forEach(item => {
+        item.addEventListener("click", () => {
+            triggerHaptic();
+            const idx = item.dataset.index;
+            expression = history[idx].answer;
+            finalized = false;
+            updateDisplay();
+            historyOverlay.classList.remove("active");
+        });
+    });
 }
 
+historyButton.addEventListener("click", () => {
+    triggerHaptic();
+    renderHistory();
+    historyOverlay.classList.add("active");
+});
 
-historyButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
+closeHistory.addEventListener("click", () => {
+    triggerHaptic();
+    historyOverlay.classList.remove("active");
+});
 
-        renderHistory();
-
-        historyOverlay.classList.add(
-            "active"
-        );
-
-    }
-);
-
-
-closeHistory.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        historyOverlay.classList.remove(
-            "active"
-        );
-
-    }
-);
-
-
-historyOverlay.addEventListener(
-    "click",
-    function(event) {
-
-        if (
-            event.target ===
-            historyOverlay
-        ) {
-
-            historyOverlay.classList.remove(
-                "active"
-            );
-
-        }
-
-    }
-);
+historyOverlay.addEventListener("click", (e) => {
+    if (e.target === historyOverlay) historyOverlay.classList.remove("active");
+});
 
 
 /* =========================================================
-   LARGE BUTTONS
+   LARGE BUTTONS & PREFERENCE INITIALIZATION
    ========================================================= */
 
-largeButtonsToggle.addEventListener(
-    "change",
-    function() {
-        triggerHaptic();
+largeButtonsToggle.addEventListener("change", () => {
+    triggerHaptic();
+    document.body.classList.toggle("large-buttons", largeButtonsToggle.checked);
+    localStorage.setItem("largeButtons", largeButtonsToggle.checked ? "true" : "false");
+});
 
-        document.body.classList.toggle(
-            "large-buttons",
-            largeButtonsToggle.checked
-        );
-
-        localStorage.setItem(
-            "largeButtons",
-            largeButtonsToggle.checked
-                ? "true"
-                : "false"
-        );
-
-    }
-);
-
-
-/* =========================================================
-   LOAD THEME
-   ========================================================= */
-
-const savedTheme =
-    localStorage.getItem(
-        "calculatorTheme"
-    );
-
-if (
-    savedTheme === "dark" ||
-    savedTheme === "golden"
-) {
-
-    document.body.setAttribute(
-        "data-theme",
-        savedTheme
-    );
-
+const savedTheme = localStorage.getItem("calculatorTheme");
+if (savedTheme === "dark" || savedTheme === "golden") {
+    document.body.setAttribute("data-theme", savedTheme);
 }
 
-const savedBackground =
-    localStorage.getItem(
-        "calculatorCustomBackground"
-    );
-
-if (
-    savedTheme === "custom" &&
-    savedBackground
-) {
-
-    document.body.style.backgroundImage =
-        `url("${savedBackground}")`;
-
-    document.body.style.backgroundSize =
-        "cover";
-
-    document.body.style.backgroundPosition =
-        "center";
-
-    document.body.style.backgroundRepeat =
-        "no-repeat";
-
+const savedBackground = localStorage.getItem("calculatorCustomBackground");
+if (savedTheme === "custom" && savedBackground) {
+    document.body.style.backgroundImage = `url("${savedBackground}")`;
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backgroundPosition = "center";
+    document.body.style.backgroundRepeat = "no-repeat";
 }
 
-const savedLargeButtons =
-    localStorage.getItem(
-        "largeButtons"
-    );
-
-if (
-    savedLargeButtons === "true"
-) {
-
-    largeButtonsToggle.checked =
-        true;
-
-    document.body.classList.add(
-        "large-buttons"
-    );
-
+const savedLargeButtons = localStorage.getItem("largeButtons");
+if (savedLargeButtons === "true") {
+    largeButtonsToggle.checked = true;
+    document.body.classList.add("large-buttons");
 }
 
 updatePercentageSetting();
 
 
 /* =========================================================
-   INTEREST CALCULATOR ELEMENTS
+   INTEREST CALCULATOR LOGIC
    ========================================================= */
 
-const interestModeButton =
-    document.getElementById(
-        "interestModeButton"
-    );
+const interestModeButton = document.getElementById("interestModeButton");
+const interestCalculator = document.getElementById("interestCalculator");
+const interestBackButton = document.getElementById("interestBackButton");
+const keypad = document.querySelector(".keypad");
+const display = document.querySelector(".display");
+const modes = document.querySelector(".modes");
 
-const interestCalculator =
-    document.getElementById(
-        "interestCalculator"
-    );
+const interestAmount = document.getElementById("interestAmount");
+const interestRate = document.getElementById("interestRate");
+const interestTime = document.getElementById("interestTime");
+const interestTimeUnit = document.getElementById("interestTimeUnit");
+const compoundFrequency = document.getElementById("compoundFrequency");
+const compoundFrequencySelect = document.getElementById("compoundFrequencySelect");
 
-const interestBackButton =
-    document.getElementById(
-        "interestBackButton"
-    );
+const simpleInterestButton = document.getElementById("simpleInterestButton");
+const compoundInterestButton = document.getElementById("compoundInterestButton");
+const addInterestButton = document.getElementById("addInterestButton");
+const subtractInterestButton = document.getElementById("subtractInterestButton");
 
-const keypad =
-    document.querySelector(
-        ".keypad"
-    );
+const interestResult = document.getElementById("interestResult");
+const interestFinalAmount = document.getElementById("interestFinalAmount");
+const interestExplanation = document.getElementById("interestExplanation");
 
-const display =
-    document.querySelector(
-        ".display"
-    );
+let interestType = "simple";
+let interestDirection = 1;
 
-const modes =
-    document.querySelector(
-        ".modes"
-    );
+const interestActions = document.querySelector(".interest-actions");
+const interestClearButton = document.createElement("button");
+interestClearButton.id = "interestClearButton";
+interestClearButton.textContent = "Clear";
+interestClearButton.type = "button";
 
-const interestAmount =
-    document.getElementById(
-        "interestAmount"
-    );
-
-const interestRate =
-    document.getElementById(
-        "interestRate"
-    );
-
-const interestTime =
-    document.getElementById(
-        "interestTime"
-    );
-
-const interestTimeUnit =
-    document.getElementById(
-        "interestTimeUnit"
-    );
-
-const compoundFrequency =
-    document.getElementById(
-        "compoundFrequency"
-    );
-
-const compoundFrequencySelect =
-    document.getElementById(
-        "compoundFrequencySelect"
-    );
-
-const simpleInterestButton =
-    document.getElementById(
-        "simpleInterestButton"
-    );
-
-const compoundInterestButton =
-    document.getElementById(
-        "compoundInterestButton"
-    );
-
-const addInterestButton =
-    document.getElementById(
-        "addInterestButton"
-    );
-
-const subtractInterestButton =
-    document.getElementById(
-        "subtractInterestButton"
-    );
-
-const interestResult =
-    document.getElementById(
-        "interestResult"
-    );
-
-const interestFinalAmount =
-    document.getElementById(
-        "interestFinalAmount"
-    );
-
-const interestExplanation =
-    document.getElementById(
-        "interestExplanation"
-    );
-
-
-/* =========================================================
-   INTEREST STATE
-   ========================================================= */
-
-let interestType =
-    "simple";
-
-let interestDirection =
-    1;
-
-
-/* =========================================================
-   CREATE INTEREST CLEAR BUTTON
-   ========================================================= */
-
-const interestActions =
-    document.querySelector(
-        ".interest-actions"
-    );
-
-const interestClearButton =
-    document.createElement(
-        "button"
-    );
-
-interestClearButton.id =
-    "interestClearButton";
-
-interestClearButton.textContent =
-    "Clear";
-
-interestClearButton.type =
-    "button";
-
-if (
-    interestActions
-) {
-
-    interestActions.appendChild(
-        interestClearButton
-    );
-
+if (interestActions) {
+    interestActions.appendChild(interestClearButton);
 }
-
-
-/* =========================================================
-   INTEREST NUMBER FORMAT
-   ========================================================= */
 
 function formatInterestNumber(value) {
-
-    if (
-        !Number.isFinite(value)
-    ) {
-
-        return "0";
-
-    }
-
-    const rounded =
-        Math.round(
-            (
-                value +
-                Number.EPSILON
-            ) *
-            100000000
-        ) /
-        100000000;
-
-    return String(
-        rounded
-    );
-
+    if (!Number.isFinite(value)) return "0";
+    const rounded = Math.round((value + Number.EPSILON) * 100000008) / 100000008;
+    return String(rounded);
 }
-
-
-/* =========================================================
-   INTEREST TIME → YEARS
-   ========================================================= */
 
 function getInterestYears() {
-
-    const time =
-        Number(
-            interestTime.value
-        );
-
-    if (
-        !Number.isFinite(time) ||
-        time < 0
-    ) {
-
-        return 0;
-
-    }
-
-    if (
-        interestTimeUnit.value ===
-        "months"
-    ) {
-
-        return time / 12;
-
-    }
-
-    if (
-        interestTimeUnit.value ===
-        "days"
-    ) {
-
-        return time / 365;
-
-    }
-
+    const time = Number(interestTime.value);
+    if (!Number.isFinite(time) || time < 0) return 0;
+    if (interestTimeUnit.value === "months") return time / 12;
+    if (interestTimeUnit.value === "days") return time / 365;
     return time;
-
 }
-
-
-/* =========================================================
-   CALCULATE INTEREST
-   ========================================================= */
 
 function calculateInterest() {
+    const principal = Number(interestAmount.value);
+    const rate = Number(interestRate.value);
+    const years = getInterestYears();
 
-    const principal =
-        Number(
-            interestAmount.value
-        );
-
-    const rate =
-        Number(
-            interestRate.value
-        );
-
-    const years =
-        getInterestYears();
-
-    if (
-        interestAmount.value === "" ||
-        interestRate.value === "" ||
-        interestTime.value === ""
-    ) {
-
-        interestResult.textContent =
-            "0";
-
-        interestFinalAmount.textContent =
-            "0";
-
-        interestExplanation.textContent =
-            "Enter your amount, rate and time.";
-
+    if (interestAmount.value === "" || interestRate.value === "" || interestTime.value === "") {
+        interestResult.textContent = "0";
+        interestFinalAmount.textContent = "0";
+        interestExplanation.textContent = "Enter your amount, rate and time.";
         return;
-
     }
 
-    if (
-        !Number.isFinite(principal) ||
-        !Number.isFinite(rate) ||
-        !Number.isFinite(years)
-    ) {
-
-        interestResult.textContent =
-            "0";
-
-        interestFinalAmount.textContent =
-            "0";
-
-        interestExplanation.textContent =
-            "Please enter valid numbers.";
-
+    if (!Number.isFinite(principal) || !Number.isFinite(rate) || !Number.isFinite(years)) {
+        interestResult.textContent = "0";
+        interestFinalAmount.textContent = "0";
+        interestExplanation.textContent = "Please enter valid numbers.";
         return;
-
     }
 
-    let earnedInterest =
-        0;
+    let earnedInterest = 0;
+    let finalAmount = principal;
 
-    let finalAmount =
-        principal;
+    if (interestType === "simple") {
+        earnedInterest = principal * (rate / 100) * years;
+        finalAmount = principal + (interestDirection * earnedInterest);
+        interestExplanation.textContent = `Simple interest: ${formatInterestNumber(principal)} × ${formatInterestNumber(rate)}% × ${formatInterestNumber(years)} year(s) = ${formatInterestNumber(earnedInterest)} interest.`;
+    } else {
+        const frequency = Number(compoundFrequencySelect.value);
+        const periodicRate = rate / 100 / frequency;
+        const periods = frequency * years;
+        const amountAfterGrowth = principal * Math.pow(1 + periodicRate, periods);
 
-    if (
-        interestType ===
-        "simple"
-    ) {
-
-        earnedInterest =
-            principal *
-            (
-                rate / 100
-            ) *
-            years;
-
-        finalAmount =
-            principal +
-            (
-                interestDirection *
-                earnedInterest
-            );
-
-        interestExplanation.textContent =
-            `Simple interest: ${formatInterestNumber(principal)} × ${formatInterestNumber(rate)}% × ${formatInterestNumber(years)} year(s) = ${formatInterestNumber(earnedInterest)} interest.`;
-
+        earnedInterest = amountAfterGrowth - principal;
+        finalAmount = principal + (interestDirection * earnedInterest);
+        interestExplanation.textContent = `Compound interest: ${formatInterestNumber(principal)} × (1 + ${formatInterestNumber(rate)}% ÷ ${frequency})^${formatInterestNumber(periods)} = ${formatInterestNumber(amountAfterGrowth)}. Interest = ${formatInterestNumber(earnedInterest)}.`;
     }
 
-    else {
-
-        const frequency =
-            Number(
-                compoundFrequencySelect.value
-            );
-
-        const periodicRate =
-            rate /
-            100 /
-            frequency;
-
-        const periods =
-            frequency *
-            years;
-
-        const amountAfterGrowth =
-            principal *
-            Math.pow(
-                1 +
-                periodicRate,
-                periods
-            );
-
-        earnedInterest =
-            amountAfterGrowth -
-            principal;
-
-        finalAmount =
-            principal +
-            (
-                interestDirection *
-                earnedInterest
-            );
-
-        interestExplanation.textContent =
-            `Compound interest: ${formatInterestNumber(principal)} × (1 + ${formatInterestNumber(rate)}% ÷ ${frequency})^${formatInterestNumber(periods)} = ${formatInterestNumber(amountAfterGrowth)}. Interest = ${formatInterestNumber(earnedInterest)}.`;
-
-    }
-
-    interestResult.textContent =
-        formatInterestNumber(
-            earnedInterest
-        );
-
-    interestFinalAmount.textContent =
-        formatInterestNumber(
-            finalAmount
-        );
-
+    interestResult.textContent = formatInterestNumber(earnedInterest);
+    interestFinalAmount.textContent = formatInterestNumber(finalAmount);
 }
 
-
-simpleInterestButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        interestType =
-            "simple";
-
-        simpleInterestButton.classList.add(
-            "active"
-        );
-
-        compoundInterestButton.classList.remove(
-            "active"
-        );
-
-        compoundFrequency.classList.remove(
-            "active"
-        );
-
-        calculateInterest();
-
-    }
-);
-
-
-compoundInterestButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        interestType =
-            "compound";
-
-        compoundInterestButton.classList.add(
-            "active"
-        );
-
-        simpleInterestButton.classList.remove(
-            "active"
-        );
-
-        compoundFrequency.classList.add(
-            "active"
-        );
-
-        calculateInterest();
-
-    }
-);
-
-
-addInterestButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        interestDirection =
-            1;
-
-        addInterestButton.classList.add(
-            "active"
-        );
-
-        subtractInterestButton.classList.remove(
-            "active"
-        );
-
-        calculateInterest();
-
-    }
-);
-
-
-subtractInterestButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        interestDirection =
-            -1;
-
-        subtractInterestButton.classList.add(
-            "active"
-        );
-
-        addInterestButton.classList.remove(
-            "active"
-        );
-
-        calculateInterest();
-
-    }
-);
-
-
-interestClearButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        interestAmount.value =
-            "";
-
-        interestRate.value =
-            "";
-
-        interestTime.value =
-            "";
-
-        interestResult.textContent =
-            "0";
-
-        interestFinalAmount.textContent =
-            "0";
-
-        interestExplanation.textContent =
-            "Enter your amount, rate and time.";
-
-        calculateInterest();
-
-        interestAmount.focus();
-
-    }
-);
-
-
-[
-    interestAmount,
-    interestRate,
-    interestTime,
-    interestTimeUnit,
-    compoundFrequencySelect
-].forEach(
-    function(element) {
-
-        element.addEventListener(
-            "input",
-            calculateInterest
-        );
-
-        element.addEventListener(
-            "change",
-            calculateInterest
-        );
-
-    }
-);
-
-
-interestModeButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        display.style.display =
-            "none";
-
-        keypad.style.display =
-            "none";
-
-        modes.style.display =
-            "none";
-
-        scientificCalculator.classList.remove("active");
-        scientificBackButton.hidden = true;
-        othersCalculator.classList.remove("active");
-        othersBackButton.hidden = true;
-        saleCalculator.classList.remove("active");
-        saleBackButton.hidden = true;
-
-        interestCalculator.classList.add(
-            "active"
-        );
-
-        interestBackButton.hidden =
-            false;
-
-        calculateInterest();
-
-    }
-);
-
-
-interestBackButton.addEventListener(
-    "click",
-    function() {
-        triggerHaptic();
-
-        interestCalculator.classList.remove(
-            "active"
-        );
-
-        display.style.display =
-            "";
-
-        keypad.style.display =
-            "";
-
-        modes.style.display =
-            "";
-
-        interestBackButton.hidden =
-            true;
-
-    }
-);
-
-
-interestType =
-    "simple";
-
-interestDirection =
-    1;
-
-simpleInterestButton.classList.add(
-    "active"
-);
-
-compoundInterestButton.classList.remove(
-    "active"
-);
-
-addInterestButton.classList.add(
-    "active"
-);
-
-subtractInterestButton.classList.remove(
-    "active"
-);
-
-compoundFrequency.classList.remove(
-    "active"
-);
-
-interestBackButton.hidden =
-    true;
-
-updateDisplay();
+simpleInterestButton.addEventListener("click", function() {
+    triggerHaptic();
+    interestType = "simple";
+    simpleInterestButton.classList.add("active");
+    compoundInterestButton.classList.remove("active");
+    compoundFrequency.classList.remove("active");
+    calculateInterest();
+});
+
+compoundInterestButton.addEventListener("click", function() {
+    triggerHaptic();
+    interestType = "compound";
+    compoundInterestButton.classList.add("active");
+    simpleInterestButton.classList.remove("active");
+    compoundFrequency.classList.add("active");
+    calculateInterest();
+});
+
+addInterestButton.addEventListener("click", function() {
+    triggerHaptic();
+    interestDirection = 1;
+    addInterestButton.classList.add("active");
+    subtractInterestButton.classList.remove("active");
+    calculateInterest();
+});
+
+subtractInterestButton.addEventListener("click", function() {
+    triggerHaptic();
+    interestDirection = -1;
+    subtractInterestButton.classList.add("active");
+    addInterestButton.classList.remove("active");
+    calculateInterest();
+});
+
+interestClearButton.addEventListener("click", function() {
+    triggerHaptic();
+    interestAmount.value = "";
+    interestRate.value = "";
+    interestTime.value = "";
+    interestResult.textContent = "0";
+    interestFinalAmount.textContent = "0";
+    interestExplanation.textContent = "Enter your amount, rate and time.";
+    calculateInterest();
+    interestAmount.focus();
+});
+
+[interestAmount, interestRate, interestTime, interestTimeUnit, compoundFrequencySelect].forEach(function(element) {
+    element.addEventListener("input", calculateInterest);
+    element.addEventListener("change", calculateInterest);
+});
+
+interestModeButton.addEventListener("click", function() {
+    triggerHaptic();
+    display.style.display = "none";
+    keypad.style.display = "none";
+    modes.style.display = "none";
+
+    scientificCalculator.classList.remove("active");
+    scientificBackButton.hidden = true;
+    othersCalculator.classList.remove("active");
+    othersBackButton.hidden = true;
+    saleCalculator.classList.remove("active");
+    saleBackButton.hidden = true;
+
+    interestCalculator.classList.add("active");
+    interestBackButton.hidden = false;
+    calculateInterest();
+});
+
+interestBackButton.addEventListener("click", function() {
+    triggerHaptic();
+    interestCalculator.classList.remove("active");
+    display.style.display = "";
+    keypad.style.display = "";
+    modes.style.display = "";
+    interestBackButton.hidden = true;
+});
 
 
 /* =========================================================
@@ -2127,7 +764,6 @@ const subSectionConversion = document.getElementById("subSectionConversion");
 const subSectionBMI = document.getElementById("subSectionBMI");
 const subSectionAge = document.getElementById("subSectionAge");
 
-// Sub-nav toggling
 othersSubConversion.addEventListener("click", function() {
     triggerHaptic();
     othersSubConversion.classList.add("active");
@@ -2161,7 +797,6 @@ othersSubAge.addEventListener("click", function() {
     subSectionAge.style.display = "block";
 });
 
-// Conversion Logic
 const conversionCategory = document.getElementById("conversionCategory");
 const conversionAmount = document.getElementById("conversionAmount");
 const conversionFromUnit = document.getElementById("conversionFromUnit");
@@ -2192,16 +827,15 @@ const units = {
 function updateConversionDropdowns() {
     const category = conversionCategory.value;
     const currentUnits = units[category];
-    
     let optionsHTML = "";
-    
+
     currentUnits.forEach(function(unit) {
         optionsHTML += `<option value="${unit.id}">${unit.name}</option>`;
     });
 
     conversionFromUnit.innerHTML = optionsHTML;
     conversionToUnit.innerHTML = optionsHTML;
-    
+
     if (currentUnits.length > 1) {
         conversionToUnit.selectedIndex = 1;
     }
@@ -2226,21 +860,13 @@ function calculateConversion() {
     if (category === "temperature") {
         let tempInCelsius = amount;
 
-        if (from === "fahrenheit") {
-            tempInCelsius = (amount - 32) * 5/9;
-        } else if (from === "kelvin") {
-            tempInCelsius = amount - 273.15;
-        }
+        if (from === "fahrenheit") tempInCelsius = (amount - 32) * 5/9;
+        else if (from === "kelvin") tempInCelsius = amount - 273.15;
 
-        if (to === "celsius") {
-            resultVal = tempInCelsius;
-        } else if (to === "fahrenheit") {
-            resultVal = (tempInCelsius * 9/5) + 32;
-        } else if (to === "kelvin") {
-            resultVal = tempInCelsius + 273.15;
-        }
-    } 
-    else {
+        if (to === "celsius") resultVal = tempInCelsius;
+        else if (to === "fahrenheit") resultVal = (tempInCelsius * 9/5) + 32;
+        else if (to === "kelvin") resultVal = tempInCelsius + 273.15;
+    } else {
         const categoryData = units[category];
         const fromRate = categoryData.find(u => u.id === from).rate;
         const toRate = categoryData.find(u => u.id === to).rate;
@@ -2250,7 +876,6 @@ function calculateConversion() {
     }
 
     const formattedResult = Math.round((resultVal + Number.EPSILON) * 10000) / 10000;
-    
     conversionFinalResult.textContent = formattedResult;
     conversionExplanation.textContent = `${amount} ${from} = ${formattedResult} ${to}`;
 }
@@ -2260,7 +885,6 @@ conversionAmount.addEventListener("input", calculateConversion);
 conversionFromUnit.addEventListener("change", calculateConversion);
 conversionToUnit.addEventListener("change", calculateConversion);
 
-// BMI Logic
 const bmiWeight = document.getElementById("bmiWeight");
 const bmiHeight = document.getElementById("bmiHeight");
 const bmiResultVal = document.getElementById("bmiResultVal");
@@ -2282,21 +906,15 @@ function calculateBMI() {
 
     bmiResultVal.textContent = roundedBmi;
 
-    if (roundedBmi < 18.5) {
-        bmiCategoryVal.textContent = "Underweight";
-    } else if (roundedBmi < 25) {
-        bmiCategoryVal.textContent = "Normal weight";
-    } else if (roundedBmi < 30) {
-        bmiCategoryVal.textContent = "Overweight";
-    } else {
-        bmiCategoryVal.textContent = "Obese";
-    }
+    if (roundedBmi < 18.5) bmiCategoryVal.textContent = "Underweight";
+    else if (roundedBmi < 25) bmiCategoryVal.textContent = "Normal weight";
+    else if (roundedBmi < 30) bmiCategoryVal.textContent = "Overweight";
+    else bmiCategoryVal.textContent = "Obese";
 }
 
 bmiWeight.addEventListener("input", calculateBMI);
 bmiHeight.addEventListener("input", calculateBMI);
 
-// Age Logic
 const ageDob = document.getElementById("ageDob");
 const ageFinalResult = document.getElementById("ageFinalResult");
 
@@ -2334,7 +952,7 @@ othersModeButton.addEventListener("click", function() {
     display.style.display = "none";
     keypad.style.display = "none";
     modes.style.display = "none";
-    
+
     interestCalculator.classList.remove("active");
     interestBackButton.hidden = true;
     scientificCalculator.classList.remove("active");
@@ -2375,9 +993,7 @@ const saleExplanation = document.getElementById("saleExplanation");
 const shareSaleButton = document.getElementById("shareSaleButton");
 
 function formatSaleNumber(value) {
-    if (!Number.isFinite(value)) {
-        return "0";
-    }
+    if (!Number.isFinite(value)) return "0";
     const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
     return String(rounded);
 }
@@ -2394,13 +1010,11 @@ function calculateSale() {
     }
 
     const discountPercent = Number.isFinite(discount) ? discount : 0;
-    
     const savings = price * (discountPercent / 100);
     const final = price - savings;
 
     saleYouSave.textContent = formatSaleNumber(savings);
     saleFinalPrice.textContent = formatSaleNumber(final);
-    
     saleExplanation.textContent = `Original: ${formatSaleNumber(price)} minus ${formatSaleNumber(discountPercent)}% (${formatSaleNumber(savings)}) = Final Price: ${formatSaleNumber(final)}.`;
 }
 
@@ -2412,7 +1026,7 @@ function calculateSale() {
 shareSaleButton.addEventListener("click", function() {
     triggerHaptic();
     const text = `Sale Breakdown:\nOriginal Price: ${saleOriginalPrice.value || 0}\nDiscount: ${saleDiscountRate.value || 0}%\nYou Save: ${saleYouSave.textContent}\nFinal Price: ${saleFinalPrice.textContent}`;
-    
+
     if (navigator.clipboard) {
         navigator.clipboard.writeText(text).then(function() {
             shareSaleButton.textContent = "✅ Copied Breakdown to Clipboard!";
@@ -2431,7 +1045,7 @@ const shareInterestButton = document.getElementById("shareInterestButton");
 shareInterestButton.addEventListener("click", function() {
     triggerHaptic();
     const text = `Interest Breakdown (${interestType.toUpperCase()}):\nPrincipal: ${interestAmount.value || 0}\nRate: ${interestRate.value || 0}%\nTime: ${interestTime.value || 0} ${interestTimeUnit.value}\nInterest Earned: ${interestResult.textContent}\nFinal Amount: ${interestFinalAmount.textContent}`;
-    
+
     if (navigator.clipboard) {
         navigator.clipboard.writeText(text).then(function() {
             shareInterestButton.textContent = "✅ Copied Breakdown to Clipboard!";
@@ -2440,13 +1054,12 @@ shareInterestButton.addEventListener("click", function() {
     }
 });
 
-
 saleModeButton.addEventListener("click", function() {
     triggerHaptic();
     display.style.display = "none";
     keypad.style.display = "none";
     modes.style.display = "none";
-    
+
     interestCalculator.classList.remove("active");
     interestBackButton.hidden = true;
     othersCalculator.classList.remove("active");
@@ -2456,7 +1069,6 @@ saleModeButton.addEventListener("click", function() {
 
     saleCalculator.classList.add("active");
     saleBackButton.hidden = false;
-
     calculateSale();
 });
 
@@ -2472,7 +1084,7 @@ saleBackButton.addEventListener("click", function() {
 
 
 /* =========================================================
-   SCIENTIFIC CALCULATOR ELEMENTS & LOGIC
+   SCIENTIFIC CALCULATOR CONTROLS
    ========================================================= */
 
 const scientificModeButton = document.getElementById("scientificModeButton");
@@ -2514,7 +1126,17 @@ sciButtons.forEach(function(button) {
         const action = button.dataset.action;
         let currentValue = Number(result.textContent);
 
-        if (!Number.isFinite(currentValue)) {
+        if (action === "powY") {
+            if (finalized) { expression = result.textContent; finalized = false; }
+            expression += "^";
+            updateDisplay();
+            return;
+        }
+
+        if (action === "rootY") {
+            if (finalized) { expression = result.textContent; finalized = false; }
+            expression += "√";
+            updateDisplay();
             return;
         }
 
@@ -2531,29 +1153,37 @@ sciButtons.forEach(function(button) {
                 displayExpression = `${currentValue}²`;
                 break;
             case "sin":
-                computedValue = Math.sin(currentValue);
+                computedValue = Math.sin(currentValue * Math.PI / 180);
                 displayExpression = `sin(${currentValue})`;
                 break;
             case "cos":
-                computedValue = Math.cos(currentValue);
+                computedValue = Math.cos(currentValue * Math.PI / 180);
                 displayExpression = `cos(${currentValue})`;
                 break;
             case "tan":
-                computedValue = Math.tan(currentValue);
+                computedValue = Math.tan(currentValue * Math.PI / 180);
                 displayExpression = `tan(${currentValue})`;
+                break;
+            case "ln":
+                computedValue = Math.log(currentValue);
+                displayExpression = `ln(${currentValue})`;
                 break;
             case "log":
                 computedValue = Math.log10(currentValue);
                 displayExpression = `log(${currentValue})`;
                 break;
+            case "fact":
+                computedValue = factorial(currentValue);
+                displayExpression = `${currentValue}!`;
+                break;
             case "pi":
-                computedValue = Math.PI;
-                displayExpression = `π`;
-                break;
+                expression += "π";
+                updateDisplay();
+                return;
             case "e":
-                computedValue = Math.E;
-                displayExpression = `e`;
-                break;
+                expression += "e";
+                updateDisplay();
+                return;
         }
 
         calculation.textContent = displayExpression;
@@ -2565,15 +1195,25 @@ sciButtons.forEach(function(button) {
 
 
 /* =========================================================
-   VOICE INPUT (WEB SPEECH API) - PC & MOBILE COMPATIBLE
+   VOICE INPUT (DYNAMIC LANGUAGE & BANGLA CONVERSION)
    ========================================================= */
 
 const micButton = document.getElementById("micButton");
+const voiceLangSelect = document.getElementById("voiceLangSelect");
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (SpeechRecognition && micButton) {
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
+    recognition.lang = localStorage.getItem("voiceLang") || "en-US";
+
+    if (voiceLangSelect) {
+        voiceLangSelect.value = recognition.lang;
+        voiceLangSelect.addEventListener("change", function () {
+            recognition.lang = voiceLangSelect.value;
+            localStorage.setItem("voiceLang", voiceLangSelect.value);
+        });
+    }
+
     recognition.continuous = false;
     let isListening = false;
 
@@ -2596,29 +1236,34 @@ if (SpeechRecognition && micButton) {
 
         let transcript = event.results[0][0].transcript.toLowerCase();
 
-        // 1. Convert actual symbols sent by PC speech engines
+        const bnNums = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
+        transcript = transcript.replace(/[০-৯]/g, s => bnNums[s]);
+
+        transcript = transcript
+            .replace(/\b(যোগ|প্লাস)\b/g, "+")
+            .replace(/\b(বিয়োগ|মাইনাস)\b/g, "−")
+            .replace(/\b(গুণ)\b/g, "×")
+            .replace(/\b(ভাগ)\b/g, "÷");
+
         transcript = transcript
             .replaceAll("-", "−")
             .replaceAll("/", "÷")
             .replaceAll("*", "×");
 
-        // 2. Convert spoken word variations to standard calculator operators
         transcript = transcript
             .replace(/\b(plus|and|add)\b/g, "+")
             .replace(/\b(minus|subtract|take away|less|dash)\b/g, "−")
             .replace(/\b(times|multiplied by|multiply by|multiplied|x)\b/g, "×")
             .replace(/\b(divided by|divide by|divided|divide|division|over|by)\b/g, "÷");
 
-        // 3. Remove extra spaces to ensure proper expression parsing
         expression = cleanExpression(transcript);
         finalized = false;
-        
-        // Update display and calculate
+
         updateDisplay();
         equalsButton.click();
     };
 
-    recognition.onerror = function(err) {
+    recognition.onerror = function() {
         micButton.style.opacity = "1";
         isListening = false;
     };
@@ -2630,6 +1275,7 @@ if (SpeechRecognition && micButton) {
 } else if (micButton) {
     micButton.style.display = "none";
 }
+
 
 /* =========================================================
    GLOBAL APP SHARE OPTION (SETTINGS)
@@ -2662,7 +1308,6 @@ shareAppSettingButton.addEventListener("click", function() {
 const hapticsToggle = document.getElementById("hapticsToggle");
 
 if (hapticsToggle) {
-    // Load saved preference on startup
     const savedHaptics = localStorage.getItem("hapticsEnabled");
     if (savedHaptics === "false") {
         hapticsToggle.checked = false;
@@ -2670,37 +1315,32 @@ if (hapticsToggle) {
         hapticsToggle.checked = true;
     }
 
-    // Save preference when user changes the toggle
     hapticsToggle.addEventListener("change", function() {
         triggerHaptic();
         localStorage.setItem("hapticsEnabled", hapticsToggle.checked ? "true" : "false");
     });
 }
 
-// Check and hide ads on startup if already purchased
 const adBanner = document.querySelector(".app-ad-banner");
 if (localStorage.getItem("noAdsPurchased") === "true" && adBanner) {
     adBanner.style.display = "none";
 }
 
-// Handle the upgrade button click
 const removeAdsButton = document.getElementById("removeAdsButton");
 if (removeAdsButton) {
     removeAdsButton.addEventListener("click", function() {
         triggerHaptic();
-        
         let confirmed = confirm("Would you like to purchase permanent No-Ads for $1.99?");
-        
+
         if (confirmed) {
             localStorage.setItem("noAdsPurchased", "true");
-            if (adBanner) {
-                adBanner.style.display = "none";
-            }
+            if (adBanner) adBanner.style.display = "none";
             removeAdsButton.textContent = "✅ Ad-Free Active!";
             removeAdsButton.style.pointerEvents = "none";
         }
     });
 }
+
 
 /* =========================================================
    DESKTOP KEYBOARD SUPPORT
@@ -2729,6 +1369,9 @@ window.addEventListener("keydown", function(event) {
         event.preventDefault();
         const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "÷");
         if (btn) btn.click();
+    } else if (key === "(" || key === ")") {
+        expression += key;
+        updateDisplay();
     } else if (key === "Enter" || key === "=") {
         equalsButton.click();
     } else if (key === "Backspace") {
@@ -2738,4 +1381,27 @@ window.addEventListener("keydown", function(event) {
     } else if (key === "%") {
         percentageButton.click();
     }
+});
+
+
+
+/* =========================================================
+   BRACKET BUTTON LISTENERS
+   ========================================================= */
+
+const bracketButtons = document.querySelectorAll(".bracket");
+
+bracketButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        triggerHaptic();
+        const bracket = button.dataset.bracket || button.textContent.trim();
+
+        if (finalized) {
+            expression = "";
+            finalized = false;
+        }
+
+        expression += bracket;
+        updateDisplay();
+    });
 });
