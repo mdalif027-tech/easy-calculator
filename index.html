@@ -9,8 +9,8 @@
 
     <link rel="stylesheet" href="style.css">
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#3b82f6">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
 </head>
 
 <body>
@@ -50,9 +50,12 @@
         <!-- Display -->
         <section class="display" style="position: relative;">
 
-            <button id="micButton" style="position: absolute; top: 10px; left: 10px; background: transparent; border: none; font-size: 1.2rem; cursor: pointer;" title="Voice Input">
-                🎤
-            </button>
+            <div style="position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 6px;">
+                <button id="micButton" style="background: transparent; border: none; font-size: 1.2rem; cursor: pointer;" title="Voice Input">
+                    🎤
+                </button>
+                <span id="voiceHint" style="font-size: 0.75rem; color: var(--muted, #888); opacity: 0.8;">Tap & say "5 plus 3"</span>
+            </div>
 
             <div
                 class="calculation"
@@ -79,7 +82,7 @@
         </nav>
 
 
-      <!-- =========================
+        <!-- =========================
              SCIENTIFIC CALCULATOR
              ========================= -->
 
@@ -89,14 +92,20 @@
                 <h2>Scientific Calculator</h2>
             </div>
 
-            <!-- Scientific Keypad Grid -->
+            <!-- Scientific Keypad Grid (Expanded 12-Button Grid) -->
             <div class="sci-keypad">
                 <button class="sci-btn" data-action="sqrt">√x</button>
                 <button class="sci-btn" data-action="pow">x²</button>
+                <button class="sci-btn" data-action="powY">xʸ</button>
+                <button class="sci-btn" data-action="rootY">ⁿ√x</button>
+                
                 <button class="sci-btn" data-action="sin">sin</button>
                 <button class="sci-btn" data-action="cos">cos</button>
                 <button class="sci-btn" data-action="tan">tan</button>
+                <button class="sci-btn" data-action="ln">ln</button>
+                
                 <button class="sci-btn" data-action="log">log</button>
+                <button class="sci-btn" data-action="fact">n!</button>
                 <button class="sci-btn" data-action="pi">π</button>
                 <button class="sci-btn" data-action="e">e</button>
             </div>
@@ -544,80 +553,48 @@
         </section>
 
 
-        <!-- Keypad -->
+        <!-- Keypad (22 Buttons - 5-Row Grid Layout) -->
         <section class="keypad">
 
-            <button class="clear">
-                AC
-            </button>
+            <!-- Row 1 -->
+            <button class="btn clear">AC</button>
+            <div style="display: flex; gap: 4px; width: 100%;">
+                <button class="btn bracket" data-bracket="(" style="flex: 1; padding: 0;">(</button>
+                <button class="btn bracket" data-bracket=")" style="flex: 1; padding: 0;">)</button>
+            </div>
+            <button class="btn backspace">⌫</button>
+            <button class="btn operator" data-operator="÷">÷</button>
 
-            <button class="backspace">
-                ⌫
-            </button>
+            <!-- Row 2 -->
+            <button class="btn number">7</button>
+            <button class="btn number">8</button>
+            <button class="btn number">9</button>
+            <button class="btn operator" data-operator="×">×</button>
 
-            <button class="percentage">
-                %
-            </button>
+            <!-- Row 3 -->
+            <button class="btn number">4</button>
+            <button class="btn number">5</button>
+            <button class="btn number">6</button>
+            <button class="btn operator" data-operator="−">−</button>
 
-            <button
-                class="operator"
-                data-operator="÷">
-                ÷
-            </button>
+            <!-- Row 4 -->
+            <button class="btn number">1</button>
+            <button class="btn number">2</button>
+            <button class="btn number">3</button>
+            <button class="btn operator" data-operator="+">+</button>
 
-
-            <button class="number">7</button>
-            <button class="number">8</button>
-            <button class="number">9</button>
-
-            <button
-                class="operator"
-                data-operator="×">
-                ×
-            </button>
-
-
-            <button class="number">4</button>
-            <button class="number">5</button>
-            <button class="number">6</button>
-
-            <button
-                class="operator"
-                data-operator="−">
-                −
-            </button>
-
-
-            <button class="number">1</button>
-            <button class="number">2</button>
-            <button class="number">3</button>
-
-            <button
-                class="operator"
-                data-operator="+">
-                +
-            </button>
-
-
-            <button class="sign">
-                +/-
-            </button>
-
-            <button class="number">
-                0
-            </button>
-
-            <button class="number">
-                .
-            </button>
-
-            <button class="equals">
-                =
-            </button>
+            <!-- Row 5 -->
+            <button class="btn percentage">%</button>
+            <button class="btn number">0</button>
+            <div style="display: flex; gap: 4px; width: 100%;">
+                <button class="btn sign font-small" style="flex: 1; padding: 0;">+/-</button>
+                <button class="btn number" style="flex: 1; padding: 0;">.</button>
+            </div>
+            <button class="btn equals">=</button>
 
         </section>
 
-        <!-- Non-Intrusive Display Ad Space (Option 2) -->
+        <!-- Non-Intrusive Display Ad Space -->
         <footer class="app-ad-banner">
             <span class="ad-label">Sponsored</span>
             <div class="ad-content">Clean, responsive ad space ready for network integration.</div>
@@ -646,6 +623,30 @@
 
             </div>
 
+            <!-- Voice & Regional Settings -->
+
+            <h3 style="margin-top:25px;">
+                Voice Recognition
+            </h3>
+
+            <label class="setting-row">
+                <span>Voice Language</span>
+                <select id="voiceLangSelect" style="padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border, #ccc); background: var(--bg-card, #fff); color: var(--text, #000);">
+                    <option value="en-US">English (US)</option>
+                    <option value="bn-BD">Bangla (বাংলা)</option>
+                </select>
+            </label>
+            <label class="setting-row">
+
+                <span>
+                    Large Buttons
+                </span>
+
+                <input
+                    id="largeButtonsToggle"
+                    type="checkbox">
+
+            </label>
 
             <!-- Appearance -->
 
@@ -683,19 +684,22 @@
                 type="file"
                 accept="image/*"
                 hidden>
-<div class="setting-row">
-    <span>Background Photo</span>
-    <!-- Your existing upload input button -->
-</div>
-<p style="font-size: 13px; color: var(--muted); margin-top: -5px; line-height: 1.4;">
-    💡 <em>Tip: For the best look, choose a clear, high-resolution photo where the face or main subject is slightly off-center.</em>
-</p>
+
+            <div class="setting-row">
+                <span>Background Photo</span>
+            </div>
+            <p style="font-size: 13px; color: var(--muted); margin-top: -5px; line-height: 1.4;">
+                💡 <em>Tip: For the best look, choose a clear, high-resolution photo where the face or main subject is slightly off-center.</em>
+            </p>
 
             <button
                 class="remove-background"
                 id="removeBackground">
                 ✕ Remove Custom Background
             </button>
+
+
+
 
 
             <!-- Percentage -->
@@ -760,17 +764,7 @@
                 Other Settings
             </h3>
 
-            <label class="setting-row">
 
-                <span>
-                    Large Buttons
-                </span>
-
-                <input
-                    id="largeButtonsToggle"
-                    type="checkbox">
-
-            </label>
 
             <label class="setting-row">
                 <span>Haptic Feedback</span>
@@ -825,17 +819,16 @@
 
 
     <script src="script.js"></script>
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js")
-        .then(() => console.log("Service Worker registered successfully!"))
-        .catch(err => console.log("Service Worker registration failed:", err));
-    });
-  }
-</script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js")
+            .then(() => console.log("Service Worker registered successfully!"))
+            .catch(err => console.log("Service Worker registration failed:", err));
+        });
+      }
+    </script>
 
 </body>
 
 </html>
-
