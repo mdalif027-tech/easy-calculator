@@ -59,14 +59,17 @@ body {
 }
 
 .calculation {min-height:42px;font-size:30px;line-height:1.35;text-align:right;word-break:break-word;color:var(--muted)}
-.result {text-align:right;font-size:55px;line-height:1.1;font-weight:bold;word-break:break-word}
+.result {text-align:right;font-size:60px;line-height:1.1;font-weight:bold;word-break:break-word}
 
 .modes {display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
 .modes button, .keypad button {color:var(--text);background:var(--number);border:2px solid var(--border);cursor:pointer}
 .modes button {padding:14px 5px;font-size:18px;font-weight:600;border-radius:7px}
 
+/* =========================================================
+   DEFAULT BIG BUTTON STYLES
+   ========================================================= */
 .keypad {display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.keypad button {min-height:65px;font-size:24px;font-weight:600;border-radius:10px}
+.keypad button {min-height:78px;font-size:28px;font-weight:600;border-radius:10px}
 .keypad .operator {background:var(--operator);color:var(--operator-text)}
 .keypad .equals {background:var(--equals);color:var(--equals-text);border-radius:10px;grid-row:span 2;min-height:auto}
 .keypad .clear {background:var(--clear);color:var(--clear-text)}
@@ -106,8 +109,11 @@ button:active {transform:scale(.96);filter:brightness(.9)}
 .history-item {padding:14px;margin-bottom:10px;background:var(--number);border:2px solid var(--border);border-radius:10px;font-size:18px}
 .empty-history {text-align:center;color:var(--muted)}
 
-body.large-buttons .keypad button {min-height:78px;font-size:28px}
-body.large-buttons .result {font-size:60px}
+/* =========================================================
+   OPTIONAL COMPACT BUTTON SIZING (SETTINGS OVERRIDE)
+   ========================================================= */
+body.compact-buttons .keypad button {min-height:65px;font-size:24px}
+body.compact-buttons .result {font-size:55px}
 
 @media(max-width:600px){
     body {
@@ -123,9 +129,11 @@ body.large-buttons .result {font-size:60px}
         flex-direction: column;
         justify-content: space-between;
     }
-    .result {font-size:40px}
+    .result {font-size:48px}
     .calculation {font-size:20px}
-    .keypad button {min-height:50px;font-size:18px}
+    .keypad button {min-height:64px;font-size:22px}
+    body.compact-buttons .keypad button {min-height:50px;font-size:18px}
+    body.compact-buttons .result {font-size:40px}
     .top-button {font-size:16px;padding:10px 14px}
     .modes button {font-size:14px;padding:10px 2px}
 }
@@ -166,9 +174,13 @@ body.large-buttons .result {font-size:60px}
 .interest-result-row strong {font-size:24px;text-align:right;word-break:break-word}
 .interest-result-row.final-amount {border-top:1px solid var(--border);margin-top:8px;padding-top:15px}
 .interest-result-row.final-amount strong {font-size:30px}
-.interest-explanation {margin-top:15px;padding:14px;background:var(--number);border:2px solid var(--border);border-radius:10px;font-size:16px;line-height:1.5}
-.interest-explanation summary {cursor:pointer;font-weight:700}
-.interest-explanation div {margin-top:10px;color:var(--muted)}
+
+/* Dynamic Formula Step Boxes */
+.interest-explanation {margin-top:15px;padding:16px;background:var(--number);border:2px solid var(--border);border-radius:10px;font-size:16px;line-height:1.6}
+.interest-explanation summary {cursor:pointer;font-weight:700;font-size:18px}
+.interest-explanation div {margin-top:10px;color:var(--text)}
+.formula-line {margin-bottom:6px}
+.formula-line strong {color:var(--operator-text)}
 
 /* Affiliate & Share Box Styles */
 .affiliate-card {margin-top:12px;padding:12px 14px;background:var(--number);border:2px solid var(--border);border-radius:10px;font-size:15px;line-height:1.4;text-align:center;color:var(--text)}
