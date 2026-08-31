@@ -55,7 +55,7 @@ const historyList = document.getElementById("historyList");
 
 const backgroundImageInput = document.getElementById("backgroundImageInput");
 const removeBackground = document.getElementById("removeBackground");
-const largeButtonsToggle = document.getElementById("largeButtonsToggle");
+const compactButtonsToggle = document.getElementById("largeButtonsToggle") || document.getElementById("compactButtonsToggle");
 const percentageProportional = document.getElementById("percentageProportional");
 const percentageNumerical = document.getElementById("percentageNumerical");
 
@@ -543,14 +543,16 @@ historyOverlay.addEventListener("click", (e) => {
 
 
 /* =========================================================
-   LARGE BUTTONS & PREFERENCE INITIALIZATION
+   BUTTON SIZING & PREFERENCE INITIALIZATION (BIG BY DEFAULT)
    ========================================================= */
 
-largeButtonsToggle.addEventListener("change", () => {
-    triggerHaptic();
-    document.body.classList.toggle("large-buttons", largeButtonsToggle.checked);
-    localStorage.setItem("largeButtons", largeButtonsToggle.checked ? "true" : "false");
-});
+if (compactButtonsToggle) {
+    compactButtonsToggle.addEventListener("change", () => {
+        triggerHaptic();
+        document.body.classList.toggle("compact-buttons", compactButtonsToggle.checked);
+        localStorage.setItem("compactButtons", compactButtonsToggle.checked ? "true" : "false");
+    });
+}
 
 const savedTheme = localStorage.getItem("calculatorTheme");
 if (savedTheme === "dark" || savedTheme === "golden") {
@@ -565,17 +567,17 @@ if (savedTheme === "custom" && savedBackground) {
     document.body.style.backgroundRepeat = "no-repeat";
 }
 
-const savedLargeButtons = localStorage.getItem("largeButtons");
-if (savedLargeButtons === "true") {
-    largeButtonsToggle.checked = true;
-    document.body.classList.add("large-buttons");
+const savedCompactButtons = localStorage.getItem("compactButtons");
+if (savedCompactButtons === "true") {
+    if (compactButtonsToggle) compactButtonsToggle.checked = true;
+    document.body.classList.add("compact-buttons");
 }
 
 updatePercentageSetting();
 
 
 /* =========================================================
-   INTEREST CALCULATOR LOGIC
+   INTEREST CALCULATOR LOGIC (DYNAMIC FORMULA STEPS)
    ========================================================= */
 
 const interestModeButton = document.getElementById("interestModeButton");
@@ -636,14 +638,17 @@ function calculateInterest() {
     if (interestAmount.value === "" || interestRate.value === "" || interestTime.value === "") {
         interestResult.textContent = "0";
         interestFinalAmount.textContent = "0";
-        interestExplanation.textContent = "Enter your amount, rate and time.";
+        interestExplanation.innerHTML = `
+            <div class="formula-line"><strong>Simple Interest:</strong> Interest = (Principal × Rate × Time) ÷ 100</div>
+          <div class="formula-line"><strong>Compound Interest:</strong> Amount = Principal × (1 + Rate ÷ 100)<sup>Time</sup></div>
+        `;
         return;
     }
 
     if (!Number.isFinite(principal) || !Number.isFinite(rate) || !Number.isFinite(years)) {
         interestResult.textContent = "0";
         interestFinalAmount.textContent = "0";
-        interestExplanation.textContent = "Please enter valid numbers.";
+        interestExplanation.innerHTML = `<div>Please enter valid numbers.</div>`;
         return;
     }
 
@@ -653,7 +658,12 @@ function calculateInterest() {
     if (interestType === "simple") {
         earnedInterest = principal * (rate / 100) * years;
         finalAmount = principal + (interestDirection * earnedInterest);
-        interestExplanation.textContent = `Simple interest: ${formatInterestNumber(principal)} × ${formatInterestNumber(rate)}% × ${formatInterestNumber(years)} year(s) = ${formatInterestNumber(earnedInterest)} interest.`;
+        
+        interestExplanation.innerHTML = `
+            <div class="formula-line"><strong>Formula:</strong> Interest = (Principal × Rate × Time) ÷ 100</div>
+            <div class="formula-line"><strong>Calculation:</strong> (${formatInterestNumber(principal)} × ${formatInterestNumber(rate)} × ${formatInterestNumber(years)}) ÷ 100 = ${formatInterestNumber(earnedInterest)}</div>
+            <div><strong>Total Balance:</strong> ${formatInterestNumber(finalAmount)}</div>
+        `;
     } else {
         const frequency = Number(compoundFrequencySelect.value);
         const periodicRate = rate / 100 / frequency;
@@ -662,7 +672,12 @@ function calculateInterest() {
 
         earnedInterest = amountAfterGrowth - principal;
         finalAmount = principal + (interestDirection * earnedInterest);
-        interestExplanation.textContent = `Compound interest: ${formatInterestNumber(principal)} × (1 + ${formatInterestNumber(rate)}% ÷ ${frequency})^${formatInterestNumber(periods)} = ${formatInterestNumber(amountAfterGrowth)}. Interest = ${formatInterestNumber(earnedInterest)}.`;
+
+        interestExplanation.innerHTML = `
+            <div class="formula-line"><strong>Formula:</strong> Total = Principal × (1 + Rate ÷ Frequency)^(Periods)</div>
+            <div class="formula-line"><strong>Calculation:</strong> ${formatInterestNumber(principal)} × (1 + ${formatInterestNumber(rate / 100)} ÷ ${frequency})^${formatInterestNumber(periods)} = ${formatInterestNumber(amountAfterGrowth)}</div>
+            <div><strong>Earned Interest:</strong> ${formatInterestNumber(earnedInterest)}</div>
+        `;
     }
 
     interestResult.textContent = formatInterestNumber(earnedInterest);
@@ -710,7 +725,6 @@ interestClearButton.addEventListener("click", function() {
     interestTime.value = "";
     interestResult.textContent = "0";
     interestFinalAmount.textContent = "0";
-    interestExplanation.textContent = "Enter your amount, rate and time.";
     calculateInterest();
     interestAmount.focus();
 });
@@ -851,7 +865,7 @@ function calculateConversion() {
 
     if (conversionAmount.value === "" || !Number.isFinite(amount)) {
         conversionFinalResult.textContent = "0";
-        conversionExplanation.textContent = "Enter an amount to convert.";
+        conversionExplanation.innerHTML = `<div>Enter an amount to convert.</div>`;
         return;
     }
 
@@ -877,7 +891,9 @@ function calculateConversion() {
 
     const formattedResult = Math.round((resultVal + Number.EPSILON) * 10000) / 10000;
     conversionFinalResult.textContent = formattedResult;
-    conversionExplanation.textContent = `${amount} ${from} = ${formattedResult} ${to}`;
+    conversionExplanation.innerHTML = `
+        <div class="formula-line"><strong>Conversion:</strong> ${amount} ${from} = ${formattedResult} ${to}</div>
+    `;
 }
 
 conversionCategory.addEventListener("change", updateConversionDropdowns);
@@ -978,7 +994,7 @@ othersBackButton.addEventListener("click", function() {
 
 
 /* =========================================================
-   SALE CALCULATOR ELEMENTS & SHARE FEATURE
+   SALE CALCULATOR LOGIC (DYNAMIC FORMULA STEPS)
    ========================================================= */
 
 const saleModeButton = document.getElementById("saleModeButton");
@@ -1005,7 +1021,10 @@ function calculateSale() {
     if (saleOriginalPrice.value === "" || !Number.isFinite(price)) {
         saleYouSave.textContent = "0";
         saleFinalPrice.textContent = "0";
-        saleExplanation.textContent = "Enter an original price to calculate.";
+        saleExplanation.innerHTML = `
+            <div class="formula-line"><strong>Formula:</strong> Original Price - Discount % = Final Price</div>
+            <div>Enter an original price to calculate.</div>
+        `;
         return;
     }
 
@@ -1015,7 +1034,12 @@ function calculateSale() {
 
     saleYouSave.textContent = formatSaleNumber(savings);
     saleFinalPrice.textContent = formatSaleNumber(final);
-    saleExplanation.textContent = `Original: ${formatSaleNumber(price)} minus ${formatSaleNumber(discountPercent)}% (${formatSaleNumber(savings)}) = Final Price: ${formatSaleNumber(final)}.`;
+    
+    saleExplanation.innerHTML = `
+        <div class="formula-line"><strong>Formula:</strong> Original Price - Discount Amount = Final Price</div>
+        <div class="formula-line"><strong>Calculation:</strong> ${formatSaleNumber(price)} - (${formatSaleNumber(price)} × ${formatSaleNumber(discountPercent / 100)}) = ${formatSaleNumber(final)}</div>
+        <div><strong>You Save:</strong> ${formatSaleNumber(savings)}</div>
+    `;
 }
 
 [saleOriginalPrice, saleDiscountRate].forEach(function(element) {
@@ -1283,27 +1307,29 @@ if (SpeechRecognition && micButton) {
 
 const shareAppSettingButton = document.getElementById("shareAppSettingButton");
 
-shareAppSettingButton.addEventListener("click", function() {
-    triggerHaptic();
-    const shareData = {
-        title: "Easy Calculator",
-        text: "Check out this awesome and lightweight Easy Calculator app with built-in scientific, interest, and unit converters!",
-        url: window.location.href
-    };
+if (shareAppSettingButton) {
+    shareAppSettingButton.addEventListener("click", function() {
+        triggerHaptic();
+        const shareData = {
+            title: "Easy Calculator",
+            text: "Check out this awesome and lightweight Easy Calculator app with built-in scientific, interest, and unit converters!",
+            url: window.location.href
+        };
 
-    if (navigator.share) {
-        navigator.share(shareData).catch(function(err) {
-            console.log("Error sharing:", err);
-        });
-    } else if (navigator.clipboard) {
-        navigator.clipboard.writeText(shareData.text + " " + shareData.url).then(function() {
-            shareAppSettingButton.textContent = "✅ App Link Copied to Clipboard!";
-            setTimeout(() => {
-                shareAppSettingButton.textContent = "📤 Share Easy Calculator App";
-            }, 2000);
-        });
-    }
-});
+        if (navigator.share) {
+            navigator.share(shareData).catch(function(err) {
+                console.log("Error sharing:", err);
+            });
+        } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(shareData.text + " " + shareData.url).then(function() {
+                shareAppSettingButton.textContent = "✅ App Link Copied to Clipboard!";
+                setTimeout(() => {
+                    shareAppSettingButton.textContent = "📤 Share Easy Calculator App";
+                }, 2000);
+            });
+        }
+    });
+}
 
 const hapticsToggle = document.getElementById("hapticsToggle");
 
@@ -1382,7 +1408,6 @@ window.addEventListener("keydown", function(event) {
         percentageButton.click();
     }
 });
-
 
 
 /* =========================================================
