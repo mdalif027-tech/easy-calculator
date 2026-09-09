@@ -10,7 +10,7 @@ A feature-packed, multi-mode **Progressive Web App (PWA)** built from scratch us
 
 * **Multiple Calculation Modes:** 
   * Standard & Scientific Calculator
-  * Sales & Interest (Simple & Compound)
+  * EMI, Sales & Interest (Simple & Compound)
   * Unit Conversions & Percentage Adjustments
   * Health & Utility: BMI & Age Calculator
 * **Accessibility & Customization:** Customizable button sizes and dark/light background themes.
