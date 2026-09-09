@@ -57,16 +57,10 @@
                 <span id="voiceHint" style="font-size: 0.75rem; color: var(--muted, #888); opacity: 0.8;">Tap & say "5 plus 3"</span>
             </div>
 
-            <div
-                class="calculation"
-                id="calculation">
-            </div>
+           
+<div class="calculation" id="calculation" contenteditable="true" spellcheck="false"></div>
 
-            <div
-                class="result"
-                id="result">
-                0
-            </div>
+            <div class="result" id="result">0</div>
 
         </section>
 
@@ -74,10 +68,10 @@
         <!-- Calculator Modes -->
         <nav class="modes">
 
-            <button id="scientificModeButton">Scientific</button>
-            <button id="saleModeButton">Sale</button>
-            <button id="othersModeButton">Others</button>
-            <button id="interestModeButton">Interest</button>
+            <button id="scientificModeButton" class="mode-btn sci-mode">Scientific</button>
+            <button id="saleModeButton" class="mode-btn sale-mode">Sale</button>
+            <button id="othersModeButton" class="mode-btn others-mode">Others</button>
+            <button id="interestModeButton" class="mode-btn interest-mode">Interest</button>
 
         </nav>
 
@@ -90,6 +84,7 @@
 
             <div class="interest-header">
                 <h2>Scientific Calculator</h2>
+                <button class="deg-rad-toggle" id="degRadToggle" title="Toggle Angle Unit">DEG</button>
             </div>
 
             <!-- Scientific Keypad Grid (Expanded 12-Button Grid) -->
@@ -183,7 +178,7 @@
 
 
         <!-- =========================
-             OTHERS CALCULATOR (CONVERSION, BMI, AGE)
+             OTHERS CALCULATOR (CONVERSION, BMI, AGE, EMI)
              ========================= -->
 
         <section class="interest-calculator" id="othersCalculator">
@@ -192,11 +187,12 @@
                 <h2>Multi-Utility Tools</h2>
             </div>
 
-            <!-- Sub-Mode Selection -->
-            <div class="interest-type" style="margin-bottom: 15px;">
-                <button class="interest-type-button active" id="othersSubConversion">Units</button>
-                <button class="interest-type-button" id="othersSubBMI">BMI</button>
-                <button class="interest-type-button" id="othersSubAge">Age</button>
+            <!-- Sub-Mode Selection Grid (Units, BMI, Age, EMI) -->
+            <div class="sub-mode-container" style="margin-bottom: 15px;">
+                <button class="sub-mode-btn active" id="othersSubConversion">Units</button>
+                <button class="sub-mode-btn" id="othersSubBMI">BMI</button>
+                <button class="sub-mode-btn" id="othersSubAge">Age</button>
+                <button class="sub-mode-btn" id="othersSubEMI">EMI</button>
             </div>
 
             <!-- SUB-SECTION 1: CONVERSION -->
@@ -313,6 +309,62 @@
                     <summary>How age is calculated</summary>
                     <div id="ageExplanation">
                         Calculates your exact age based on today's date.
+                    </div>
+                </details>
+            </div>
+
+            <!-- SUB-SECTION 4: EMI CALCULATOR -->
+            <div id="subSectionEMI" style="display: none;">
+                <label class="interest-field">
+                    <span>Loan Amount</span>
+                    <div class="interest-input">
+                        <input id="emiAmount" type="number" inputmode="decimal" placeholder="0">
+                    </div>
+                </label>
+
+                <label class="interest-field">
+                    <span>Interest Rate (% per year)</span>
+                    <div class="interest-input">
+                        <input id="emiRate" type="number" inputmode="decimal" placeholder="0">
+                        <span class="input-unit">%</span>
+                    </div>
+                </label>
+
+                <label class="interest-field">
+                    <span>Tenure</span>
+                    <div class="interest-input">
+                        <input id="emiTenure" type="number" inputmode="decimal" placeholder="0">
+                        <select id="emiTenureUnit">
+                            <option value="years">Years</option>
+                            <option value="months">Months</option>
+                        </select>
+                    </div>
+                </label>
+
+                <div class="interest-result">
+                    <div class="interest-result-row">
+                        <span>Monthly EMI</span>
+                        <strong id="emiMonthlyVal">0</strong>
+                    </div>
+                    <div class="interest-result-row">
+                        <span>Total Interest</span>
+                        <strong id="emiTotalInterestVal">0</strong>
+                    </div>
+                    <div class="interest-result-row final-amount">
+                        <span>Total Payment</span>
+                        <strong id="emiTotalPayableVal">0</strong>
+                    </div>
+                </div>
+
+                <!-- Share EMI Button -->
+                <button class="affiliate-card share-btn-action" id="shareEmiButton" style="width:100%; margin-top:12px; text-align:center; cursor:pointer;">
+                    📤 Share EMI Breakdown
+                </button>
+
+                <details class="interest-explanation">
+                    <summary>How EMI is calculated</summary>
+                    <div id="emiExplanation">
+                        EMI = [P × r × (1+r)^n] / [(1+r)^n - 1], where P is Principal Loan Amount, r is Monthly Interest Rate, and n is Tenure in Months.
                     </div>
                 </details>
             </div>
@@ -536,15 +588,14 @@
             </div>
 
 
- <!-- Explanation -->
-<details class="interest-explanation">
-    <summary>How was this calculated?</summary>
-    <div id="interestExplanation">
-        <p><strong>Simple Interest:</strong> Interest = (Principal × Rate × Time) ÷ 100</p>
-        
-<p><strong>Compound Interest:</strong> Amount = Principal × (1 + Rate ÷ 100)<sup>Time</sup></p>
-    </div>
-</details>
+            <!-- Explanation -->
+            <details class="interest-explanation">
+                <summary>How was this calculated?</summary>
+                <div id="interestExplanation">
+                    <p><strong>Simple Interest:</strong> Interest = (Principal × Rate × Time) ÷ 100</p>
+                    <p><strong>Compound Interest:</strong> Amount = Principal × (1 + Rate ÷ 100)<sup>Time</sup></p>
+                </div>
+            </details>
 
         </section>
 
@@ -694,10 +745,6 @@
                 ✕ Remove Custom Background
             </button>
 
-
-
-
-
             <!-- Percentage -->
 
             <h3 style="margin-top:25px;">
@@ -759,8 +806,6 @@
             <h3 style="margin-top:25px;">
                 Other Settings
             </h3>
-
-
 
             <label class="setting-row">
                 <span>Haptic Feedback</span>
@@ -828,4 +873,3 @@
 </body>
 
 </html>
-
