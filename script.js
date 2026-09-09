@@ -1,10 +1,6 @@
 /* =========================================================
    EASY CALCULATOR
-   COMPLETE MERGED & UPGRADED SCRIPT
-   ========================================================= */
-
-/* =========================================================
-   HAPTIC FEEDBACK HELPER
+   UPGRADED SCRIPT WITH INLINE CURSOR-AWARE EDITING
    ========================================================= */
 
 function triggerHaptic() {
@@ -14,11 +10,7 @@ function triggerHaptic() {
     }
 }
 
-
-/* =========================================================
-   BASIC ELEMENTS
-   ========================================================= */
-
+/* BASIC ELEMENTS */
 const numberButtons = document.querySelectorAll(".number");
 const operatorButtons = document.querySelectorAll(".operator");
 const result = document.getElementById("result");
@@ -29,29 +21,15 @@ const backspaceButton = document.querySelector(".backspace");
 const signButton = document.querySelector(".sign");
 const percentageButton = document.querySelector(".percentage");
 
-
-/* =========================================================
-   SETTINGS
-   ========================================================= */
-
+/* SETTINGS & OVERLAYS */
 const settingsButton = document.getElementById("settingsButton");
 const settingsOverlay = document.getElementById("settingsOverlay");
 const closeSettings = document.getElementById("closeSettings");
-
-
-/* =========================================================
-   HISTORY
-   ========================================================= */
 
 const historyButton = document.getElementById("historyButton");
 const historyOverlay = document.getElementById("historyOverlay");
 const closeHistory = document.getElementById("closeHistory");
 const historyList = document.getElementById("historyList");
-
-
-/* =========================================================
-   BACKGROUND & UI SETTINGS
-   ========================================================= */
 
 const backgroundImageInput = document.getElementById("backgroundImageInput");
 const removeBackground = document.getElementById("removeBackground");
@@ -59,40 +37,27 @@ const compactButtonsToggle = document.getElementById("largeButtonsToggle") || do
 const percentageProportional = document.getElementById("percentageProportional");
 const percentageNumerical = document.getElementById("percentageNumerical");
 
-
-/* =========================================================
-   CALCULATOR STATE
-   ========================================================= */
-
+/* CALCULATOR STATE */
 let expression = "";
 let finalized = false;
 let percentageMode = localStorage.getItem("percentageMode") || "proportional";
+let isDegreeMode = true; // Angle mode for Scientific Calculator
 
-const operators = ["+", "−", "×", "÷", "^", "√"];
+const operators = ["+", "−", "-", "×", "*", "÷", "/", "^", "√"];
 
+function isOperator(value) { return operators.includes(value); }
 
-/* =========================================================
-   EXPRESSION HELPERS & FORMATTING
-   ========================================================= */
-
-function isOperator(value) {
-    return operators.includes(value);
-}
-
-function cleanExpression(value) {
-    return value.replace(/\s/g, "");
+function cleanExpression(value) { 
+    if (!value) return "";
+    return value
+        .replace(/\s/g, "")
+        .replaceAll("-", "−")
+        .replaceAll("*", "×")
+        .replaceAll("/", "÷"); 
 }
 
 function formatExpression(value) {
-    return value
-        .replaceAll("×", " × ")
-        .replaceAll("÷", " ÷ ")
-        .replaceAll("+", " + ")
-        .replaceAll("−", " − ")
-        .replaceAll("^", " ^ ")
-        .replaceAll("√", " √ ")
-        .replace(/\s+/g, " ")
-        .trim();
+    return value ? value.trim() : "";
 }
 
 function formatResult(value) {
@@ -115,17 +80,151 @@ function factorial(n) {
     return res;
 }
 
-
 /* =========================================================
-   ADVANCED SHUNTING-YARD PARSER & EVALUATOR (PEMDAS)
+   CURSOR & SELECTION MANAGEMENT
    ========================================================= */
+let savedSelection = { start: 0, end: 0 };
 
+function saveCaretPosition() {
+    if (!calculation) return;
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        if (calculation.contains(range.commonAncestorContainer)) {
+            const preRange = range.cloneRange();
+            preRange.selectNodeContents(calculation);
+            preRange.setEnd(range.startContainer, range.startOffset);
+            const start = preRange.toString().length;
+
+            const preRangeEnd = range.cloneRange();
+            preRangeEnd.selectNodeContents(calculation);
+            preRangeEnd.setEnd(range.endContainer, range.endOffset);
+            const end = preRangeEnd.toString().length;
+
+            savedSelection = { start, end };
+            return;
+        }
+    }
+}
+
+function getValidSelection() {
+    let start = savedSelection.start;
+    let end = savedSelection.end;
+    const len = expression.length;
+    if (start < 0 || start > len) start = len;
+    if (end < 0 || end > len) end = len;
+    if (start > end) { const tmp = start; start = end; end = tmp; }
+    return { start, end };
+}
+
+function setCaretPosition(offset) {
+    if (!calculation) return;
+    calculation.focus();
+    const sel = window.getSelection();
+    if (!sel) return;
+
+    if (calculation.childNodes.length === 0) {
+        savedSelection = { start: 0, end: 0 };
+        return;
+    }
+
+    let currentOffset = 0;
+    let targetNode = null;
+    let targetOffset = 0;
+
+    function traverse(node) {
+        if (targetNode) return;
+        if (node.nodeType === Node.TEXT_NODE) {
+            const len = node.nodeValue.length;
+            if (currentOffset + len >= offset) {
+                targetNode = node;
+                targetOffset = offset - currentOffset;
+            } else {
+                currentOffset += len;
+            }
+        } else {
+            for (let child of node.childNodes) {
+                traverse(child);
+            }
+        }
+    }
+
+    traverse(calculation);
+
+    const range = document.createRange();
+    if (targetNode) {
+        range.setStart(targetNode, Math.min(targetOffset, targetNode.nodeValue.length));
+        range.setEnd(targetNode, Math.min(targetOffset, targetNode.nodeValue.length));
+    } else {
+        range.selectNodeContents(calculation);
+        range.collapse(false);
+    }
+
+    sel.removeAllRanges();
+    sel.addRange(range);
+    savedSelection = { start: offset, end: offset };
+}
+
+function insertTextAtCursor(text) {
+    if (finalized) {
+        expression = "";
+        finalized = false;
+        savedSelection = { start: 0, end: 0 };
+    }
+
+    const { start, end } = getValidSelection();
+    expression = expression.slice(0, start) + text + expression.slice(end);
+    const newCaretPos = start + text.length;
+
+    updateDisplay();
+    setCaretPosition(newCaretPos);
+}
+
+function backspaceAtCursor() {
+    if (finalized) {
+        expression = "";
+        finalized = false;
+        savedSelection = { start: 0, end: 0 };
+        updateDisplay();
+        setCaretPosition(0);
+        return;
+    }
+
+    const { start, end } = getValidSelection();
+    let newCaretPos = start;
+
+    if (start !== end) {
+        expression = expression.slice(0, start) + expression.slice(end);
+        newCaretPos = start;
+    } else if (start > 0) {
+        expression = expression.slice(0, start - 1) + expression.slice(start);
+        newCaretPos = start - 1;
+    }
+
+    updateDisplay();
+    setCaretPosition(newCaretPos);
+}
+
+// Prevent focus loss when clicking on-screen buttons
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".keypad button, .bracket, .sci-btn").forEach(btn => {
+        btn.addEventListener("mousedown", (e) => e.preventDefault());
+    });
+});
+
+/* PARSER & EVALUATOR */
 function tokenize(str) {
     const tokens = [];
     let i = 0;
 
     while (i < str.length) {
         const char = str[i];
+
+        if (char === "−" || char === "-") {
+            tokens.push("−");
+            i++;
+            continue;
+        }
 
         if (/\d|\./.test(char)) {
             let num = "";
@@ -152,7 +251,6 @@ function tokenize(str) {
             i++;
             continue;
         }
-
         i++;
     }
     return tokens;
@@ -272,13 +370,11 @@ function evaluateExpression(input) {
     }
 }
 
-
-/* =========================================================
-   DISPLAY UPDATES & INPUT HANDLERS
-   ========================================================= */
-
+/* DISPLAY UPDATES & DIRECT EDITING LISTENERS */
 function updateDisplay() {
-    calculation.textContent = formatExpression(expression);
+    if (calculation) {
+        calculation.textContent = formatExpression(expression);
+    }
 
     if (!expression) {
         result.textContent = "0";
@@ -289,18 +385,43 @@ function updateDisplay() {
     result.textContent = answer === null ? "0" : formatResult(answer);
 }
 
+if (calculation) {
+    ["keyup", "mouseup", "click", "focus", "input", "selectionchange"].forEach(evt => {
+        calculation.addEventListener(evt, saveCaretPosition);
+    });
+
+    calculation.addEventListener("input", () => {
+        saveCaretPosition();
+        let rawText = calculation.textContent
+            .replaceAll("/", "÷")
+            .replaceAll("*", "×")
+            .replaceAll("-", "−");
+
+        expression = rawText;
+        
+        if (calculation.textContent !== rawText) {
+            const caret = savedSelection.start;
+            calculation.textContent = rawText;
+            setCaretPosition(caret);
+        }
+
+        const answer = evaluateExpression(expression);
+        result.textContent = answer === null ? "0" : formatResult(answer);
+    });
+
+    calculation.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            equalsButton.click();
+        }
+    });
+}
+
 numberButtons.forEach(button => {
     button.addEventListener("click", () => {
         triggerHaptic();
         const number = button.textContent.trim();
-
-        if (finalized) {
-            expression = "";
-            finalized = false;
-        }
-
-        expression += number;
-        updateDisplay();
+        insertTextAtCursor(number);
     });
 });
 
@@ -312,124 +433,131 @@ operatorButtons.forEach(button => {
         if (finalized) {
             expression = result.textContent;
             finalized = false;
+            savedSelection = { start: expression.length, end: expression.length };
         }
 
+        const { start, end } = getValidSelection();
+
         if (!expression && operator === "−") {
-            expression = "−";
-            updateDisplay();
+            insertTextAtCursor("−");
             return;
         }
 
-        if (expression && isOperator(expression.at(-1))) {
-            expression = expression.slice(0, -1) + operator;
+        if (start > 0 && isOperator(expression[start - 1]) && start === end) {
+            expression = expression.slice(0, start - 1) + operator + expression.slice(start);
+            updateDisplay();
+            setCaretPosition(start);
         } else {
-            expression += operator;
+            insertTextAtCursor(operator);
         }
-
-        updateDisplay();
     });
 });
 
-percentageButton.addEventListener("click", () => {
-    triggerHaptic();
-    if (finalized) finalized = false;
-    expression += "%";
-    updateDisplay();
-});
-
-equalsButton.addEventListener("click", () => {
-    triggerHaptic();
-    if (!expression) return;
-
-    const answer = evaluateExpression(expression);
-    if (answer === null) return;
-
-    const finalAnswer = formatResult(answer);
-    if (finalAnswer === "Cannot divide by 0" || finalAnswer === "Error") {
-        result.textContent = finalAnswer;
-        return;
-    }
-
-    addHistory(formatExpression(expression), finalAnswer);
-    calculation.textContent = formatExpression(expression) + " =";
-    result.textContent = finalAnswer;
-    expression = finalAnswer;
-    finalized = true;
-});
-
-clearButton.addEventListener("click", () => {
-    triggerHaptic();
-    expression = "";
-    finalized = false;
-    calculation.textContent = "";
-    result.textContent = "0";
-});
-
-backspaceButton.addEventListener("click", () => {
-    triggerHaptic();
-    if (finalized) {
-        expression = "";
-        finalized = false;
-    } else {
-        expression = expression.slice(0, -1);
-    }
-    updateDisplay();
-});
-
-signButton.addEventListener("click", () => {
-    triggerHaptic();
-    if (finalized) {
-        expression = result.textContent;
-        finalized = false;
-    }
-
-    if (expression.startsWith("−")) {
-        expression = expression.substring(1);
-    } else {
-        expression = "−" + expression;
-    }
-    updateDisplay();
-});
-
-
-/* =========================================================
-   SETTINGS OVERLAY & PREFERENCES
-   ========================================================= */
-
-settingsButton.addEventListener("click", () => {
-    triggerHaptic();
-    settingsOverlay.classList.add("active");
-});
-
-closeSettings.addEventListener("click", () => {
-    triggerHaptic();
-    settingsOverlay.classList.remove("active");
-});
-
-settingsOverlay.addEventListener("click", (e) => {
-    if (e.target === settingsOverlay) settingsOverlay.classList.remove("active");
-});
-
-function updatePercentageSetting() {
-    percentageProportional.checked = percentageMode === "proportional";
-    percentageNumerical.checked = percentageMode === "numerical";
+if (percentageButton) {
+    percentageButton.addEventListener("click", () => {
+        triggerHaptic();
+        insertTextAtCursor("%");
+    });
 }
 
-percentageProportional.addEventListener("change", () => {
-    if (percentageProportional.checked) {
-        percentageMode = "proportional";
-        localStorage.setItem("percentageMode", "proportional");
-        updateDisplay();
-    }
-});
+if (equalsButton) {
+    equalsButton.addEventListener("click", () => {
+        triggerHaptic();
+        if (!expression) return;
 
-percentageNumerical.addEventListener("change", () => {
-    if (percentageNumerical.checked) {
-        percentageMode = "numerical";
-        localStorage.setItem("percentageMode", "numerical");
-        updateDisplay();
-    }
-});
+        const answer = evaluateExpression(expression);
+        if (answer === null) return;
+
+        const finalAnswer = formatResult(answer);
+        if (finalAnswer === "Cannot divide by 0" || finalAnswer === "Error") {
+            result.textContent = finalAnswer;
+            return;
+        }
+
+        addHistory(formatExpression(expression), finalAnswer);
+        calculation.textContent = formatExpression(expression) + " =";
+        result.textContent = finalAnswer;
+        expression = finalAnswer;
+        finalized = true;
+        savedSelection = { start: expression.length, end: expression.length };
+    });
+}
+
+if (clearButton) {
+    clearButton.addEventListener("click", () => {
+        triggerHaptic();
+        expression = "";
+        finalized = false;
+        calculation.textContent = "";
+        result.textContent = "0";
+        savedSelection = { start: 0, end: 0 };
+    });
+}
+
+if (backspaceButton) {
+    backspaceButton.addEventListener("click", () => {
+        triggerHaptic();
+        backspaceAtCursor();
+    });
+}
+
+if (signButton) {
+    signButton.addEventListener("click", () => {
+        triggerHaptic();
+        if (finalized) {
+            expression = result.textContent;
+            finalized = false;
+            savedSelection = { start: expression.length, end: expression.length };
+        }
+
+        const { start } = getValidSelection();
+        if (expression.startsWith("−")) {
+            expression = expression.substring(1);
+            updateDisplay();
+            setCaretPosition(Math.max(0, start - 1));
+        } else {
+            expression = "−" + expression;
+            updateDisplay();
+            setCaretPosition(start + 1);
+        }
+    });
+}
+
+/* SETTINGS & OVERLAYS */
+if (settingsButton && settingsOverlay) {
+    settingsButton.addEventListener("click", () => { triggerHaptic(); settingsOverlay.classList.add("active"); });
+}
+if (closeSettings && settingsOverlay) {
+    closeSettings.addEventListener("click", () => { triggerHaptic(); settingsOverlay.classList.remove("active"); });
+}
+if (settingsOverlay) {
+    settingsOverlay.addEventListener("click", (e) => { if (e.target === settingsOverlay) settingsOverlay.classList.remove("active"); });
+}
+
+function updatePercentageSetting() {
+    if (percentageProportional) percentageProportional.checked = percentageMode === "proportional";
+    if (percentageNumerical) percentageNumerical.checked = percentageMode === "numerical";
+}
+
+if (percentageProportional) {
+    percentageProportional.addEventListener("change", () => {
+        if (percentageProportional.checked) {
+            percentageMode = "proportional";
+            localStorage.setItem("percentageMode", "proportional");
+            updateDisplay();
+        }
+    });
+}
+
+if (percentageNumerical) {
+    percentageNumerical.addEventListener("change", () => {
+        if (percentageNumerical.checked) {
+            percentageMode = "numerical";
+            localStorage.setItem("percentageMode", "numerical");
+            updateDisplay();
+        }
+    });
+}
 
 const themeButtons = document.querySelectorAll(".theme-option");
 themeButtons.forEach(button => {
@@ -438,7 +566,7 @@ themeButtons.forEach(button => {
         const theme = button.dataset.theme;
 
         if (theme === "custom") {
-            backgroundImageInput.click();
+            if (backgroundImageInput) backgroundImageInput.click();
             return;
         }
 
@@ -452,38 +580,38 @@ themeButtons.forEach(button => {
     });
 });
 
-backgroundImageInput.addEventListener("change", () => {
-    const file = backgroundImageInput.files[0];
-    if (!file) return;
+if (backgroundImageInput) {
+    backgroundImageInput.addEventListener("change", () => {
+        const file = backgroundImageInput.files[0];
+        if (!file) return;
 
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-        const image = reader.result;
-        document.body.style.backgroundImage = `url("${image}")`;
-        document.body.style.backgroundSize = "cover";
-        document.body.style.backgroundPosition = "center";
-        document.body.style.backgroundRepeat = "no-repeat";
-        document.body.removeAttribute("data-theme");
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+            const image = reader.result;
+            document.body.style.backgroundImage = `url("${image}")`;
+            document.body.style.backgroundSize = "cover";
+            document.body.style.backgroundPosition = "center";
+            document.body.style.backgroundRepeat = "no-repeat";
+            document.body.removeAttribute("data-theme");
 
-        localStorage.setItem("calculatorCustomBackground", image);
-        localStorage.setItem("calculatorTheme", "custom");
+            localStorage.setItem("calculatorCustomBackground", image);
+            localStorage.setItem("calculatorTheme", "custom");
+        });
+        reader.readAsDataURL(file);
     });
-    reader.readAsDataURL(file);
-});
+}
 
-removeBackground.addEventListener("click", () => {
-    triggerHaptic();
-    document.body.style.backgroundImage = "";
-    document.body.removeAttribute("data-theme");
-    localStorage.removeItem("calculatorCustomBackground");
-    localStorage.setItem("calculatorTheme", "light");
-});
+if (removeBackground) {
+    removeBackground.addEventListener("click", () => {
+        triggerHaptic();
+        document.body.style.backgroundImage = "";
+        document.body.removeAttribute("data-theme");
+        localStorage.removeItem("calculatorCustomBackground");
+        localStorage.setItem("calculatorTheme", "light");
+    });
+}
 
-
-/* =========================================================
-   INTERACTIVE HISTORY MANAGEMENT
-   ========================================================= */
-
+/* HISTORY */
 let history = JSON.parse(localStorage.getItem("calculatorHistory") || "[]");
 
 function addHistory(equation, answer) {
@@ -502,6 +630,8 @@ function escapeHtml(value) {
 }
 
 function renderHistory() {
+    if (!historyList) return;
+
     if (history.length === 0) {
         historyList.innerHTML = '<p class="empty-history">No calculations yet.</p>';
         return;
@@ -521,30 +651,21 @@ function renderHistory() {
             expression = history[idx].answer;
             finalized = false;
             updateDisplay();
-            historyOverlay.classList.remove("active");
+            if (historyOverlay) historyOverlay.classList.remove("active");
+            setCaretPosition(expression.length);
         });
     });
 }
 
-historyButton.addEventListener("click", () => {
-    triggerHaptic();
-    renderHistory();
-    historyOverlay.classList.add("active");
-});
-
-closeHistory.addEventListener("click", () => {
-    triggerHaptic();
-    historyOverlay.classList.remove("active");
-});
-
-historyOverlay.addEventListener("click", (e) => {
-    if (e.target === historyOverlay) historyOverlay.classList.remove("active");
-});
-
-
-/* =========================================================
-   BUTTON SIZING & PREFERENCE INITIALIZATION (BIG BY DEFAULT)
-   ========================================================= */
+if (historyButton && historyOverlay) {
+    historyButton.addEventListener("click", () => { triggerHaptic(); renderHistory(); historyOverlay.classList.add("active"); });
+}
+if (closeHistory && historyOverlay) {
+    closeHistory.addEventListener("click", () => { triggerHaptic(); renderHistory(); historyOverlay.classList.remove("active"); });
+}
+if (historyOverlay) {
+    historyOverlay.addEventListener("click", (e) => { if (e.target === historyOverlay) historyOverlay.classList.remove("active"); });
+}
 
 if (compactButtonsToggle) {
     compactButtonsToggle.addEventListener("change", () => {
@@ -575,11 +696,45 @@ if (savedCompactButtons === "true") {
 
 updatePercentageSetting();
 
+/* DYNAMIC STYLES INTEGRATION (MODES & DISPLAY) */
+const dynamicStyles = document.createElement("style");
+dynamicStyles.innerHTML = `
+    .calculation {
+        min-height: 1.5em;
+        font-size: 30px;
+        line-height: 1.35;
+        text-align: right;
+        word-break: break-all;
+        color: var(--muted);
+        outline: none;
+        border: none;
+        padding-top: 28px;
+    }
+    .result {
+        text-align: right;
+        font-size: 60px;
+        line-height: 1.1;
+        font-weight: bold;
+        word-break: break-word;
+    }
+    .modes {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .mode-btn {
+        padding: 14px 5px;
+        font-size: 18px;
+        font-weight: 700;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+`;
+document.head.appendChild(dynamicStyles);
 
-/* =========================================================
-   INTEREST CALCULATOR LOGIC (DYNAMIC FORMULA STEPS)
-   ========================================================= */
-
+/* INTEREST CALCULATOR LOGIC */
 const interestModeButton = document.getElementById("interestModeButton");
 const interestCalculator = document.getElementById("interestCalculator");
 const interestBackButton = document.getElementById("interestBackButton");
@@ -612,17 +767,16 @@ interestClearButton.id = "interestClearButton";
 interestClearButton.textContent = "Clear";
 interestClearButton.type = "button";
 
-if (interestActions) {
-    interestActions.appendChild(interestClearButton);
-}
+if (interestActions) { interestActions.appendChild(interestClearButton); }
 
 function formatInterestNumber(value) {
     if (!Number.isFinite(value)) return "0";
-    const rounded = Math.round((value + Number.EPSILON) * 100000008) / 100000008;
+    const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
     return String(rounded);
 }
 
 function getInterestYears() {
+    if (!interestTime || !interestTimeUnit) return 0;
     const time = Number(interestTime.value);
     if (!Number.isFinite(time) || time < 0) return 0;
     if (interestTimeUnit.value === "months") return time / 12;
@@ -631,6 +785,8 @@ function getInterestYears() {
 }
 
 function calculateInterest() {
+    if (!interestAmount || !interestRate || !interestTime || !interestResult || !interestFinalAmount) return;
+
     const principal = Number(interestAmount.value);
     const rate = Number(interestRate.value);
     const years = getInterestYears();
@@ -638,17 +794,19 @@ function calculateInterest() {
     if (interestAmount.value === "" || interestRate.value === "" || interestTime.value === "") {
         interestResult.textContent = "0";
         interestFinalAmount.textContent = "0";
-        interestExplanation.innerHTML = `
-            <div class="formula-line"><strong>Simple Interest:</strong> Interest = (Principal × Rate × Time) ÷ 100</div>
-          <div class="formula-line"><strong>Compound Interest:</strong> Amount = Principal × (1 + Rate ÷ 100)<sup>Time</sup></div>
-        `;
+        if (interestExplanation) {
+            interestExplanation.innerHTML = `
+                <div class="formula-line"><strong>Simple Interest:</strong> Interest = (Principal × Rate × Time) ÷ 100</div>
+                <div class="formula-line"><strong>Compound Interest:</strong> Amount = Principal × (1 + Rate ÷ 100)<sup>Time</sup></div>
+            `;
+        }
         return;
     }
 
     if (!Number.isFinite(principal) || !Number.isFinite(rate) || !Number.isFinite(years)) {
         interestResult.textContent = "0";
         interestFinalAmount.textContent = "0";
-        interestExplanation.innerHTML = `<div>Please enter valid numbers.</div>`;
+        if (interestExplanation) interestExplanation.innerHTML = `<div>Please enter valid numbers.</div>`;
         return;
     }
 
@@ -659,13 +817,15 @@ function calculateInterest() {
         earnedInterest = principal * (rate / 100) * years;
         finalAmount = principal + (interestDirection * earnedInterest);
         
-        interestExplanation.innerHTML = `
-            <div class="formula-line"><strong>Formula:</strong> Interest = (Principal × Rate × Time) ÷ 100</div>
-            <div class="formula-line"><strong>Calculation:</strong> (${formatInterestNumber(principal)} × ${formatInterestNumber(rate)} × ${formatInterestNumber(years)}) ÷ 100 = ${formatInterestNumber(earnedInterest)}</div>
-            <div><strong>Total Balance:</strong> ${formatInterestNumber(finalAmount)}</div>
-        `;
+        if (interestExplanation) {
+            interestExplanation.innerHTML = `
+                <div class="formula-line"><strong>Formula:</strong> Interest = (Principal × Rate × Time) ÷ 100</div>
+                <div class="formula-line"><strong>Calculation:</strong> (${formatInterestNumber(principal)} × ${formatInterestNumber(rate)} × ${formatInterestNumber(years)}) ÷ 100 = ${formatInterestNumber(earnedInterest)}</div>
+                <div><strong>Total Balance:</strong> ${formatInterestNumber(finalAmount)}</div>
+            `;
+        }
     } else {
-        const frequency = Number(compoundFrequencySelect.value);
+        const frequency = Number(compoundFrequencySelect ? compoundFrequencySelect.value : 1);
         const periodicRate = rate / 100 / frequency;
         const periods = frequency * years;
         const amountAfterGrowth = principal * Math.pow(1 + periodicRate, periods);
@@ -673,99 +833,111 @@ function calculateInterest() {
         earnedInterest = amountAfterGrowth - principal;
         finalAmount = principal + (interestDirection * earnedInterest);
 
-        interestExplanation.innerHTML = `
-            <div class="formula-line"><strong>Formula:</strong> Total = Principal × (1 + Rate ÷ Frequency)^(Periods)</div>
-            <div class="formula-line"><strong>Calculation:</strong> ${formatInterestNumber(principal)} × (1 + ${formatInterestNumber(rate / 100)} ÷ ${frequency})^${formatInterestNumber(periods)} = ${formatInterestNumber(amountAfterGrowth)}</div>
-            <div><strong>Earned Interest:</strong> ${formatInterestNumber(earnedInterest)}</div>
-        `;
+        if (interestExplanation) {
+            interestExplanation.innerHTML = `
+                <div class="formula-line"><strong>Formula:</strong> Total = Principal × (1 + Rate ÷ Frequency)^(Periods)</div>
+                <div class="formula-line"><strong>Calculation:</strong> ${formatInterestNumber(principal)} × (1 + ${formatInterestNumber(rate / 100)} ÷ ${frequency})^${formatInterestNumber(periods)} = ${formatInterestNumber(amountAfterGrowth)}</div>
+                <div><strong>Earned Interest:</strong> ${formatInterestNumber(earnedInterest)}</div>
+            `;
+        }
     }
 
     interestResult.textContent = formatInterestNumber(earnedInterest);
     interestFinalAmount.textContent = formatInterestNumber(finalAmount);
 }
 
-simpleInterestButton.addEventListener("click", function() {
-    triggerHaptic();
-    interestType = "simple";
-    simpleInterestButton.classList.add("active");
-    compoundInterestButton.classList.remove("active");
-    compoundFrequency.classList.remove("active");
-    calculateInterest();
-});
+if (simpleInterestButton) {
+    simpleInterestButton.addEventListener("click", function() {
+        triggerHaptic();
+        interestType = "simple";
+        simpleInterestButton.classList.add("active");
+        if (compoundInterestButton) compoundInterestButton.classList.remove("active");
+        if (compoundFrequency) compoundFrequency.classList.remove("active");
+        calculateInterest();
+    });
+}
 
-compoundInterestButton.addEventListener("click", function() {
-    triggerHaptic();
-    interestType = "compound";
-    compoundInterestButton.classList.add("active");
-    simpleInterestButton.classList.remove("active");
-    compoundFrequency.classList.add("active");
-    calculateInterest();
-});
+if (compoundInterestButton) {
+    compoundInterestButton.addEventListener("click", function() {
+        triggerHaptic();
+        interestType = "compound";
+        compoundInterestButton.classList.add("active");
+        if (simpleInterestButton) simpleInterestButton.classList.remove("active");
+        if (compoundFrequency) compoundFrequency.classList.add("active");
+        calculateInterest();
+    });
+}
 
-addInterestButton.addEventListener("click", function() {
-    triggerHaptic();
-    interestDirection = 1;
-    addInterestButton.classList.add("active");
-    subtractInterestButton.classList.remove("active");
-    calculateInterest();
-});
+if (addInterestButton) {
+    addInterestButton.addEventListener("click", function() {
+        triggerHaptic();
+        interestDirection = 1;
+        addInterestButton.classList.add("active");
+        if (subtractInterestButton) subtractInterestButton.classList.remove("active");
+        calculateInterest();
+    });
+}
 
-subtractInterestButton.addEventListener("click", function() {
-    triggerHaptic();
-    interestDirection = -1;
-    subtractInterestButton.classList.add("active");
-    addInterestButton.classList.remove("active");
-    calculateInterest();
-});
+if (subtractInterestButton) {
+    subtractInterestButton.addEventListener("click", function() {
+        triggerHaptic();
+        interestDirection = -1;
+        subtractInterestButton.classList.add("active");
+        if (addInterestButton) addInterestButton.classList.remove("active");
+        calculateInterest();
+    });
+}
 
 interestClearButton.addEventListener("click", function() {
     triggerHaptic();
-    interestAmount.value = "";
-    interestRate.value = "";
-    interestTime.value = "";
-    interestResult.textContent = "0";
-    interestFinalAmount.textContent = "0";
+    if (interestAmount) interestAmount.value = "";
+    if (interestRate) interestRate.value = "";
+    if (interestTime) interestTime.value = "";
+    if (interestResult) interestResult.textContent = "0";
+    if (interestFinalAmount) interestFinalAmount.textContent = "0";
     calculateInterest();
-    interestAmount.focus();
+    if (interestAmount) interestAmount.focus();
 });
 
 [interestAmount, interestRate, interestTime, interestTimeUnit, compoundFrequencySelect].forEach(function(element) {
-    element.addEventListener("input", calculateInterest);
-    element.addEventListener("change", calculateInterest);
+    if (element) {
+        element.addEventListener("input", calculateInterest);
+        element.addEventListener("change", calculateInterest);
+    }
 });
 
-interestModeButton.addEventListener("click", function() {
-    triggerHaptic();
-    display.style.display = "none";
-    keypad.style.display = "none";
-    modes.style.display = "none";
+if (interestModeButton) {
+    interestModeButton.addEventListener("click", function() {
+        triggerHaptic();
+        if (display) display.style.display = "none";
+        if (keypad) keypad.style.display = "none";
+        if (modes) modes.style.display = "none";
 
-    scientificCalculator.classList.remove("active");
-    scientificBackButton.hidden = true;
-    othersCalculator.classList.remove("active");
-    othersBackButton.hidden = true;
-    saleCalculator.classList.remove("active");
-    saleBackButton.hidden = true;
+        if (scientificCalculator) scientificCalculator.classList.remove("active");
+        if (scientificBackButton) scientificBackButton.hidden = true;
+        if (othersCalculator) othersCalculator.classList.remove("active");
+        if (othersBackButton) othersBackButton.hidden = true;
+        if (saleCalculator) saleCalculator.classList.remove("active");
+        if (saleBackButton) saleBackButton.hidden = true;
 
-    interestCalculator.classList.add("active");
-    interestBackButton.hidden = false;
-    calculateInterest();
-});
+        if (interestCalculator) interestCalculator.classList.add("active");
+        if (interestBackButton) interestBackButton.hidden = false;
+        calculateInterest();
+    });
+}
 
-interestBackButton.addEventListener("click", function() {
-    triggerHaptic();
-    interestCalculator.classList.remove("active");
-    display.style.display = "";
-    keypad.style.display = "";
-    modes.style.display = "";
-    interestBackButton.hidden = true;
-});
+if (interestBackButton) {
+    interestBackButton.addEventListener("click", function() {
+        triggerHaptic();
+        if (interestCalculator) interestCalculator.classList.remove("active");
+        if (display) display.style.display = "";
+        if (keypad) keypad.style.display = "";
+        if (modes) modes.style.display = "";
+        interestBackButton.hidden = true;
+    });
+}
 
-
-/* =========================================================
-   OTHERS CALCULATOR (CONVERSION, BMI, AGE)
-   ========================================================= */
-
+/* OTHERS CALCULATOR (CONVERSION, BMI, AGE, EMI) */
 const othersModeButton = document.getElementById("othersModeButton");
 const othersCalculator = document.getElementById("othersCalculator");
 const othersBackButton = document.getElementById("othersBackButton");
@@ -773,44 +945,27 @@ const othersBackButton = document.getElementById("othersBackButton");
 const othersSubConversion = document.getElementById("othersSubConversion");
 const othersSubBMI = document.getElementById("othersSubBMI");
 const othersSubAge = document.getElementById("othersSubAge");
+const othersSubEMI = document.getElementById("othersSubEMI");
 
 const subSectionConversion = document.getElementById("subSectionConversion");
 const subSectionBMI = document.getElementById("subSectionBMI");
 const subSectionAge = document.getElementById("subSectionAge");
+const subSectionEMI = document.getElementById("subSectionEMI");
 
-othersSubConversion.addEventListener("click", function() {
-    triggerHaptic();
-    othersSubConversion.classList.add("active");
-    othersSubBMI.classList.remove("active");
-    othersSubAge.classList.remove("active");
+function setActiveSubMode(activeBtn, activeSection) {
+    [othersSubConversion, othersSubBMI, othersSubAge, othersSubEMI].forEach(btn => { if (btn) btn.classList.remove("active"); });
+    [subSectionConversion, subSectionBMI, subSectionAge, subSectionEMI].forEach(sec => { if (sec) sec.style.display = "none"; });
 
-    subSectionConversion.style.display = "block";
-    subSectionBMI.style.display = "none";
-    subSectionAge.style.display = "none";
-});
+    if (activeBtn) activeBtn.classList.add("active");
+    if (activeSection) activeSection.style.display = "block";
+}
 
-othersSubBMI.addEventListener("click", function() {
-    triggerHaptic();
-    othersSubBMI.classList.add("active");
-    othersSubConversion.classList.remove("active");
-    othersSubAge.classList.remove("active");
+if (othersSubConversion) othersSubConversion.addEventListener("click", function() { triggerHaptic(); setActiveSubMode(othersSubConversion, subSectionConversion); });
+if (othersSubBMI) othersSubBMI.addEventListener("click", function() { triggerHaptic(); setActiveSubMode(othersSubBMI, subSectionBMI); });
+if (othersSubAge) othersSubAge.addEventListener("click", function() { triggerHaptic(); setActiveSubMode(othersSubAge, subSectionAge); });
+if (othersSubEMI) othersSubEMI.addEventListener("click", function() { triggerHaptic(); setActiveSubMode(othersSubEMI, subSectionEMI); calculateEMI(); });
 
-    subSectionConversion.style.display = "none";
-    subSectionBMI.style.display = "block";
-    subSectionAge.style.display = "none";
-});
-
-othersSubAge.addEventListener("click", function() {
-    triggerHaptic();
-    othersSubAge.classList.add("active");
-    othersSubConversion.classList.remove("active");
-    othersSubBMI.classList.remove("active");
-
-    subSectionConversion.style.display = "none";
-    subSectionBMI.style.display = "none";
-    subSectionAge.style.display = "block";
-});
-
+/* UNITS CONVERSION */
 const conversionCategory = document.getElementById("conversionCategory");
 const conversionAmount = document.getElementById("conversionAmount");
 const conversionFromUnit = document.getElementById("conversionFromUnit");
@@ -839,6 +994,8 @@ const units = {
 };
 
 function updateConversionDropdowns() {
+    if (!conversionCategory || !conversionFromUnit || !conversionToUnit) return;
+
     const category = conversionCategory.value;
     const currentUnits = units[category];
     let optionsHTML = "";
@@ -858,6 +1015,8 @@ function updateConversionDropdowns() {
 }
 
 function calculateConversion() {
+    if (!conversionAmount || !conversionCategory || !conversionFromUnit || !conversionToUnit || !conversionFinalResult) return;
+
     const amount = Number(conversionAmount.value);
     const category = conversionCategory.value;
     const from = conversionFromUnit.value;
@@ -865,7 +1024,7 @@ function calculateConversion() {
 
     if (conversionAmount.value === "" || !Number.isFinite(amount)) {
         conversionFinalResult.textContent = "0";
-        conversionExplanation.innerHTML = `<div>Enter an amount to convert.</div>`;
+        if (conversionExplanation) conversionExplanation.innerHTML = `<div>Enter an amount to convert.</div>`;
         return;
     }
 
@@ -891,22 +1050,27 @@ function calculateConversion() {
 
     const formattedResult = Math.round((resultVal + Number.EPSILON) * 10000) / 10000;
     conversionFinalResult.textContent = formattedResult;
-    conversionExplanation.innerHTML = `
-        <div class="formula-line"><strong>Conversion:</strong> ${amount} ${from} = ${formattedResult} ${to}</div>
-    `;
+    if (conversionExplanation) {
+        conversionExplanation.innerHTML = `
+            <div class="formula-line"><strong>Conversion:</strong> ${amount} ${from} = ${formattedResult} ${to}</div>
+        `;
+    }
 }
 
-conversionCategory.addEventListener("change", updateConversionDropdowns);
-conversionAmount.addEventListener("input", calculateConversion);
-conversionFromUnit.addEventListener("change", calculateConversion);
-conversionToUnit.addEventListener("change", calculateConversion);
+if (conversionCategory) conversionCategory.addEventListener("change", updateConversionDropdowns);
+if (conversionAmount) conversionAmount.addEventListener("input", calculateConversion);
+if (conversionFromUnit) conversionFromUnit.addEventListener("change", calculateConversion);
+if (conversionToUnit) conversionToUnit.addEventListener("change", calculateConversion);
 
+/* BMI CALCULATOR */
 const bmiWeight = document.getElementById("bmiWeight");
 const bmiHeight = document.getElementById("bmiHeight");
 const bmiResultVal = document.getElementById("bmiResultVal");
 const bmiCategoryVal = document.getElementById("bmiCategoryVal");
 
 function calculateBMI() {
+    if (!bmiWeight || !bmiHeight || !bmiResultVal || !bmiCategoryVal) return;
+
     const weight = Number(bmiWeight.value);
     const heightCm = Number(bmiHeight.value);
 
@@ -928,13 +1092,16 @@ function calculateBMI() {
     else bmiCategoryVal.textContent = "Obese";
 }
 
-bmiWeight.addEventListener("input", calculateBMI);
-bmiHeight.addEventListener("input", calculateBMI);
+if (bmiWeight) bmiWeight.addEventListener("input", calculateBMI);
+if (bmiHeight) bmiHeight.addEventListener("input", calculateBMI);
 
+/* AGE CALCULATOR */
 const ageDob = document.getElementById("ageDob");
 const ageFinalResult = document.getElementById("ageFinalResult");
 
 function calculateAge() {
+    if (!ageDob || !ageFinalResult) return;
+
     if (!ageDob.value) {
         ageFinalResult.textContent = "0 Years";
         return;
@@ -961,42 +1128,100 @@ function calculateAge() {
     ageFinalResult.textContent = `${years} yrs, ${months} mos, ${days} days`;
 }
 
-ageDob.addEventListener("change", calculateAge);
+if (ageDob) ageDob.addEventListener("change", calculateAge);
 
-othersModeButton.addEventListener("click", function() {
-    triggerHaptic();
-    display.style.display = "none";
-    keypad.style.display = "none";
-    modes.style.display = "none";
+/* EMI CALCULATOR */
+const emiAmount = document.getElementById("emiAmount");
+const emiRate = document.getElementById("emiRate");
+const emiTenure = document.getElementById("emiTenure");
+const emiTenureUnit = document.getElementById("emiTenureUnit");
 
-    interestCalculator.classList.remove("active");
-    interestBackButton.hidden = true;
-    scientificCalculator.classList.remove("active");
-    scientificBackButton.hidden = true;
-    saleCalculator.classList.remove("active");
-    saleBackButton.hidden = true;
+const emiMonthlyVal = document.getElementById("emiMonthlyVal");
+const emiTotalInterestVal = document.getElementById("emiTotalInterestVal");
+const emiTotalPayableVal = document.getElementById("emiTotalPayableVal");
+const shareEmiButton = document.getElementById("shareEmiButton");
 
-    othersCalculator.classList.add("active");
-    othersBackButton.hidden = false;
+function calculateEMI() {
+    if (!emiAmount || !emiRate || !emiTenure || !emiTenureUnit || !emiMonthlyVal || !emiTotalInterestVal || !emiTotalPayableVal) return;
 
-    updateConversionDropdowns();
+    const P = Number(emiAmount.value);
+    const annualRate = Number(emiRate.value);
+    let tenureVal = Number(emiTenure.value);
+
+    if (!P || !annualRate || !tenureVal || P <= 0 || annualRate <= 0 || tenureVal <= 0) {
+        emiMonthlyVal.textContent = "0";
+        emiTotalInterestVal.textContent = "0";
+        emiTotalPayableVal.textContent = "0";
+        return;
+    }
+
+    const n = emiTenureUnit.value === "years" ? tenureVal * 12 : tenureVal;
+    const r = annualRate / 12 / 100;
+
+    const emi = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    const totalPayment = emi * n;
+    const totalInterest = totalPayment - P;
+
+    emiMonthlyVal.textContent = formatInterestNumber(emi);
+    emiTotalInterestVal.textContent = formatInterestNumber(totalInterest);
+    emiTotalPayableVal.textContent = formatInterestNumber(totalPayment);
+}
+
+[emiAmount, emiRate, emiTenure, emiTenureUnit].forEach(el => {
+    if (el) {
+        el.addEventListener("input", calculateEMI);
+        el.addEventListener("change", calculateEMI);
+    }
 });
 
-othersBackButton.addEventListener("click", function() {
-    triggerHaptic();
-    othersCalculator.classList.remove("active");
-    othersBackButton.hidden = true;
+if (shareEmiButton) {
+    shareEmiButton.addEventListener("click", function() {
+        triggerHaptic();
+        const text = `EMI Breakdown:\nLoan Amount: ${emiAmount ? emiAmount.value : 0}\nInterest Rate: ${emiRate ? emiRate.value : 0}%\nTenure: ${emiTenure ? emiTenure.value : 0} ${emiTenureUnit ? emiTenureUnit.value : ''}\nMonthly EMI: ${emiMonthlyVal ? emiMonthlyVal.textContent : 0}\nTotal Interest: ${emiTotalInterestVal ? emiTotalInterestVal.textContent : 0}\nTotal Payable: ${emiTotalPayableVal ? emiTotalPayableVal.textContent : 0}`;
 
-    display.style.display = "";
-    keypad.style.display = "";
-    modes.style.display = "";
-});
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                shareEmiButton.textContent = "✅ Copied Breakdown to Clipboard!";
+                setTimeout(() => { shareEmiButton.textContent = "📤 Share EMI Breakdown"; }, 2000);
+            });
+        }
+    });
+}
 
+if (othersModeButton) {
+    othersModeButton.addEventListener("click", function() {
+        triggerHaptic();
+        if (display) display.style.display = "none";
+        if (keypad) keypad.style.display = "none";
+        if (modes) modes.style.display = "none";
 
-/* =========================================================
-   SALE CALCULATOR LOGIC (DYNAMIC FORMULA STEPS)
-   ========================================================= */
+        if (interestCalculator) interestCalculator.classList.remove("active");
+        if (interestBackButton) interestBackButton.hidden = true;
+        if (scientificCalculator) scientificCalculator.classList.remove("active");
+        if (scientificBackButton) scientificBackButton.hidden = true;
+        if (saleCalculator) saleCalculator.classList.remove("active");
+        if (saleBackButton) saleBackButton.hidden = true;
 
+        if (othersCalculator) othersCalculator.classList.add("active");
+        if (othersBackButton) othersBackButton.hidden = false;
+
+        updateConversionDropdowns();
+    });
+}
+
+if (othersBackButton) {
+    othersBackButton.addEventListener("click", function() {
+        triggerHaptic();
+        if (othersCalculator) othersCalculator.classList.remove("active");
+        othersBackButton.hidden = true;
+
+        if (display) display.style.display = "";
+        if (keypad) keypad.style.display = "";
+        if (modes) modes.style.display = "";
+    });
+}
+
+/* SALE CALCULATOR */
 const saleModeButton = document.getElementById("saleModeButton");
 const saleCalculator = document.getElementById("saleCalculator");
 const saleBackButton = document.getElementById("saleBackButton");
@@ -1015,16 +1240,20 @@ function formatSaleNumber(value) {
 }
 
 function calculateSale() {
+    if (!saleOriginalPrice || !saleDiscountRate || !saleYouSave || !saleFinalPrice) return;
+
     const price = Number(saleOriginalPrice.value);
     const discount = Number(saleDiscountRate.value);
 
     if (saleOriginalPrice.value === "" || !Number.isFinite(price)) {
         saleYouSave.textContent = "0";
         saleFinalPrice.textContent = "0";
-        saleExplanation.innerHTML = `
-            <div class="formula-line"><strong>Formula:</strong> Original Price - Discount % = Final Price</div>
-            <div>Enter an original price to calculate.</div>
-        `;
+        if (saleExplanation) {
+            saleExplanation.innerHTML = `
+                <div class="formula-line"><strong>Formula:</strong> Original Price - Discount % = Final Price</div>
+                <div>Enter an original price to calculate.</div>
+            `;
+        }
         return;
     }
 
@@ -1035,112 +1264,128 @@ function calculateSale() {
     saleYouSave.textContent = formatSaleNumber(savings);
     saleFinalPrice.textContent = formatSaleNumber(final);
     
-    saleExplanation.innerHTML = `
-        <div class="formula-line"><strong>Formula:</strong> Original Price - Discount Amount = Final Price</div>
-        <div class="formula-line"><strong>Calculation:</strong> ${formatSaleNumber(price)} - (${formatSaleNumber(price)} × ${formatSaleNumber(discountPercent / 100)}) = ${formatSaleNumber(final)}</div>
-        <div><strong>You Save:</strong> ${formatSaleNumber(savings)}</div>
-    `;
+    if (saleExplanation) {
+        saleExplanation.innerHTML = `
+            <div class="formula-line"><strong>Formula:</strong> Original Price - Discount Amount = Final Price</div>
+            <div class="formula-line"><strong>Calculation:</strong> ${formatSaleNumber(price)} - (${formatSaleNumber(price)} × ${formatSaleNumber(discountPercent / 100)}) = ${formatSaleNumber(final)}</div>
+            <div><strong>You Save:</strong> ${formatSaleNumber(savings)}</div>
+        `;
+    }
 }
 
 [saleOriginalPrice, saleDiscountRate].forEach(function(element) {
-    element.addEventListener("input", calculateSale);
-    element.addEventListener("change", calculateSale);
-});
-
-shareSaleButton.addEventListener("click", function() {
-    triggerHaptic();
-    const text = `Sale Breakdown:\nOriginal Price: ${saleOriginalPrice.value || 0}\nDiscount: ${saleDiscountRate.value || 0}%\nYou Save: ${saleYouSave.textContent}\nFinal Price: ${saleFinalPrice.textContent}`;
-
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(function() {
-            shareSaleButton.textContent = "✅ Copied Breakdown to Clipboard!";
-            setTimeout(() => { shareSaleButton.textContent = "📤 Share Sale Breakdown"; }, 2000);
-        });
+    if (element) {
+        element.addEventListener("input", calculateSale);
+        element.addEventListener("change", calculateSale);
     }
 });
 
+if (shareSaleButton) {
+    shareSaleButton.addEventListener("click", function() {
+        triggerHaptic();
+        const text = `Sale Breakdown:\nOriginal Price: ${saleOriginalPrice ? saleOriginalPrice.value : 0}\nDiscount: ${saleDiscountRate ? saleDiscountRate.value : 0}%\nYou Save: ${saleYouSave ? saleYouSave.textContent : 0}\nFinal Price: ${saleFinalPrice ? saleFinalPrice.textContent : 0}`;
 
-/* =========================================================
-   SHARE INTEREST BREAKDOWN
-   ========================================================= */
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(function() {
+                shareSaleButton.textContent = "✅ Copied Breakdown to Clipboard!";
+                setTimeout(() => { shareSaleButton.textContent = "📤 Share Sale Breakdown"; }, 2000);
+            });
+        }
+    });
+}
 
 const shareInterestButton = document.getElementById("shareInterestButton");
 
-shareInterestButton.addEventListener("click", function() {
-    triggerHaptic();
-    const text = `Interest Breakdown (${interestType.toUpperCase()}):\nPrincipal: ${interestAmount.value || 0}\nRate: ${interestRate.value || 0}%\nTime: ${interestTime.value || 0} ${interestTimeUnit.value}\nInterest Earned: ${interestResult.textContent}\nFinal Amount: ${interestFinalAmount.textContent}`;
+if (shareInterestButton) {
+    shareInterestButton.addEventListener("click", function() {
+        triggerHaptic();
+        const text = `Interest Breakdown (${interestType.toUpperCase()}):\nPrincipal: ${interestAmount ? interestAmount.value : 0}\nRate: ${interestRate ? interestRate.value : 0}%\nTime: ${interestTime ? interestTime.value : 0} ${interestTimeUnit ? interestTimeUnit.value : ''}\nInterest Earned: ${interestResult ? interestResult.textContent : 0}\nFinal Amount: ${interestFinalAmount ? interestFinalAmount.textContent : 0}`;
 
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(function() {
-            shareInterestButton.textContent = "✅ Copied Breakdown to Clipboard!";
-            setTimeout(() => { shareInterestButton.textContent = "📤 Share Interest Breakdown"; }, 2000);
-        });
-    }
-});
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(function() {
+                shareInterestButton.textContent = "✅ Copied Breakdown to Clipboard!";
+                setTimeout(() => { shareInterestButton.textContent = "📤 Share Interest Breakdown"; }, 2000);
+            });
+        }
+    });
+}
 
-saleModeButton.addEventListener("click", function() {
-    triggerHaptic();
-    display.style.display = "none";
-    keypad.style.display = "none";
-    modes.style.display = "none";
+if (saleModeButton) {
+    saleModeButton.addEventListener("click", function() {
+        triggerHaptic();
+        if (display) display.style.display = "none";
+        if (keypad) keypad.style.display = "none";
+        if (modes) modes.style.display = "none";
 
-    interestCalculator.classList.remove("active");
-    interestBackButton.hidden = true;
-    othersCalculator.classList.remove("active");
-    othersBackButton.hidden = true;
-    scientificCalculator.classList.remove("active");
-    scientificBackButton.hidden = true;
+        if (interestCalculator) interestCalculator.classList.remove("active");
+        if (interestBackButton) interestBackButton.hidden = true;
+        if (othersCalculator) othersCalculator.classList.remove("active");
+        if (othersBackButton) othersBackButton.hidden = true;
+        if (scientificCalculator) scientificCalculator.classList.remove("active");
+        if (scientificBackButton) scientificBackButton.hidden = true;
 
-    saleCalculator.classList.add("active");
-    saleBackButton.hidden = false;
-    calculateSale();
-});
+        if (saleCalculator) saleCalculator.classList.add("active");
+        if (saleBackButton) saleBackButton.hidden = false;
+        calculateSale();
+    });
+}
 
-saleBackButton.addEventListener("click", function() {
-    triggerHaptic();
-    saleCalculator.classList.remove("active");
-    saleBackButton.hidden = true;
+if (saleBackButton) {
+    saleBackButton.addEventListener("click", function() {
+        triggerHaptic();
+        if (saleCalculator) saleCalculator.classList.remove("active");
+        saleBackButton.hidden = true;
 
-    display.style.display = "";
-    keypad.style.display = "";
-    modes.style.display = "";
-});
+        if (display) display.style.display = "";
+        if (keypad) keypad.style.display = "";
+        if (modes) modes.style.display = "";
+    });
+}
 
-
-/* =========================================================
-   SCIENTIFIC CALCULATOR CONTROLS
-   ========================================================= */
-
+/* SCIENTIFIC CALCULATOR LOGIC */
 const scientificModeButton = document.getElementById("scientificModeButton");
 const scientificCalculator = document.getElementById("scientificCalculator");
 const scientificBackButton = document.getElementById("scientificBackButton");
+const degRadToggle = document.getElementById("degRadToggle");
 
-scientificModeButton.addEventListener("click", function() {
-    triggerHaptic();
-    display.style.display = "";
-    keypad.style.display = "";
-    modes.style.display = "none";
+if (degRadToggle) {
+    degRadToggle.addEventListener("click", function() {
+        triggerHaptic();
+        isDegreeMode = !isDegreeMode;
+        degRadToggle.textContent = isDegreeMode ? "DEG" : "RAD";
+    });
+}
 
-    interestCalculator.classList.remove("active");
-    interestBackButton.hidden = true;
-    othersCalculator.classList.remove("active");
-    othersBackButton.hidden = true;
-    saleCalculator.classList.remove("active");
-    saleBackButton.hidden = true;
+if (scientificModeButton) {
+    scientificModeButton.addEventListener("click", function() {
+        triggerHaptic();
+        if (display) display.style.display = "";
+        if (keypad) keypad.style.display = "";
+        if (modes) modes.style.display = "none";
 
-    scientificCalculator.classList.add("active");
-    scientificBackButton.hidden = false;
-});
+        if (interestCalculator) interestCalculator.classList.remove("active");
+        if (interestBackButton) interestBackButton.hidden = true;
+        if (othersCalculator) othersCalculator.classList.remove("active");
+        if (othersBackButton) othersBackButton.hidden = true;
+        if (saleCalculator) saleCalculator.classList.remove("active");
+        if (saleBackButton) saleBackButton.hidden = true;
 
-scientificBackButton.addEventListener("click", function() {
-    triggerHaptic();
-    scientificCalculator.classList.remove("active");
-    scientificBackButton.hidden = true;
+        if (scientificCalculator) scientificCalculator.classList.add("active");
+        if (scientificBackButton) scientificBackButton.hidden = false;
+    });
+}
 
-    display.style.display = "";
-    keypad.style.display = "";
-    modes.style.display = "";
-});
+if (scientificBackButton) {
+    scientificBackButton.addEventListener("click", function() {
+        triggerHaptic();
+        if (scientificCalculator) scientificCalculator.classList.remove("active");
+        scientificBackButton.hidden = true;
+
+        if (display) display.style.display = "";
+        if (keypad) keypad.style.display = "";
+        if (modes) modes.style.display = "";
+    });
+}
 
 const sciButtons = document.querySelectorAll(".sci-btn");
 
@@ -1148,24 +1393,32 @@ sciButtons.forEach(function(button) {
     button.addEventListener("click", function() {
         triggerHaptic();
         const action = button.dataset.action;
-        let currentValue = Number(result.textContent);
 
         if (action === "powY") {
-            if (finalized) { expression = result.textContent; finalized = false; }
-            expression += "^";
-            updateDisplay();
+            insertTextAtCursor("^");
             return;
         }
 
         if (action === "rootY") {
-            if (finalized) { expression = result.textContent; finalized = false; }
-            expression += "√";
-            updateDisplay();
+            insertTextAtCursor("√");
             return;
         }
 
+        if (action === "pi") {
+            insertTextAtCursor("π");
+            return;
+        }
+
+        if (action === "e") {
+            insertTextAtCursor("e");
+            return;
+        }
+
+        let currentValue = Number(result.textContent);
         let computedValue = currentValue;
         let displayExpression = "";
+
+        const angleFactor = isDegreeMode ? Math.PI / 180 : 1;
 
         switch (action) {
             case "sqrt":
@@ -1177,15 +1430,15 @@ sciButtons.forEach(function(button) {
                 displayExpression = `${currentValue}²`;
                 break;
             case "sin":
-                computedValue = Math.sin(currentValue * Math.PI / 180);
+                computedValue = Math.sin(currentValue * angleFactor);
                 displayExpression = `sin(${currentValue})`;
                 break;
             case "cos":
-                computedValue = Math.cos(currentValue * Math.PI / 180);
+                computedValue = Math.cos(currentValue * angleFactor);
                 displayExpression = `cos(${currentValue})`;
                 break;
             case "tan":
-                computedValue = Math.tan(currentValue * Math.PI / 180);
+                computedValue = Math.tan(currentValue * angleFactor);
                 displayExpression = `tan(${currentValue})`;
                 break;
             case "ln":
@@ -1200,28 +1453,17 @@ sciButtons.forEach(function(button) {
                 computedValue = factorial(currentValue);
                 displayExpression = `${currentValue}!`;
                 break;
-            case "pi":
-                expression += "π";
-                updateDisplay();
-                return;
-            case "e":
-                expression += "e";
-                updateDisplay();
-                return;
         }
 
         calculation.textContent = displayExpression;
         result.textContent = formatResult(computedValue);
         expression = String(computedValue);
         finalized = true;
+        savedSelection = { start: expression.length, end: expression.length };
     });
 });
 
-
-/* =========================================================
-   VOICE INPUT (DYNAMIC LANGUAGE & BANGLA CONVERSION)
-   ========================================================= */
-
+/* VOICE RECOGNITION */
 const micButton = document.getElementById("micButton");
 const voiceLangSelect = document.getElementById("voiceLangSelect");
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1284,27 +1526,16 @@ if (SpeechRecognition && micButton) {
         finalized = false;
 
         updateDisplay();
-        equalsButton.click();
+        if (equalsButton) equalsButton.click();
     };
 
-    recognition.onerror = function() {
-        micButton.style.opacity = "1";
-        isListening = false;
-    };
-
-    recognition.onend = function() {
-        micButton.style.opacity = "1";
-        isListening = false;
-    };
+    recognition.onerror = function() { micButton.style.opacity = "1"; isListening = false; };
+    recognition.onend = function() { micButton.style.opacity = "1"; isListening = false; };
 } else if (micButton) {
     micButton.style.display = "none";
 }
 
-
-/* =========================================================
-   GLOBAL APP SHARE OPTION (SETTINGS)
-   ========================================================= */
-
+/* APP SETTINGS & SHARE */
 const shareAppSettingButton = document.getElementById("shareAppSettingButton");
 
 if (shareAppSettingButton) {
@@ -1312,7 +1543,7 @@ if (shareAppSettingButton) {
         triggerHaptic();
         const shareData = {
             title: "Easy Calculator",
-            text: "Check out this awesome and lightweight Easy Calculator app with built-in scientific, interest, and unit converters!",
+            text: "Check out this awesome and lightweight Easy Calculator app with built-in scientific, interest, EMI, and unit converters!",
             url: window.location.href
         };
 
@@ -1335,11 +1566,7 @@ const hapticsToggle = document.getElementById("hapticsToggle");
 
 if (hapticsToggle) {
     const savedHaptics = localStorage.getItem("hapticsEnabled");
-    if (savedHaptics === "false") {
-        hapticsToggle.checked = false;
-    } else {
-        hapticsToggle.checked = true;
-    }
+    hapticsToggle.checked = savedHaptics !== "false";
 
     hapticsToggle.addEventListener("change", function() {
         triggerHaptic();
@@ -1367,66 +1594,45 @@ if (removeAdsButton) {
     });
 }
 
-
-/* =========================================================
-   DESKTOP KEYBOARD SUPPORT
-   ========================================================= */
-
+/* KEYBOARD SUPPORT */
 window.addEventListener("keydown", function(event) {
-    if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) {
-        return;
-    }
+    if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
 
     const key = event.key;
 
     if (!isNaN(key) || key === ".") {
-        const btn = Array.from(numberButtons).find(b => b.textContent.trim() === key);
-        if (btn) btn.click();
+        insertTextAtCursor(key);
     } else if (key === "+") {
-        const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "+");
-        if (btn) btn.click();
+        insertTextAtCursor("+");
     } else if (key === "-") {
-        const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "−");
-        if (btn) btn.click();
+        insertTextAtCursor("−");
     } else if (key === "*") {
-        const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "×");
-        if (btn) btn.click();
+        insertTextAtCursor("×");
     } else if (key === "/") {
         event.preventDefault();
-        const btn = Array.from(operatorButtons).find(b => b.dataset.operator === "÷");
-        if (btn) btn.click();
+        insertTextAtCursor("÷");
     } else if (key === "(" || key === ")") {
-        expression += key;
-        updateDisplay();
+        insertTextAtCursor(key);
     } else if (key === "Enter" || key === "=") {
-        equalsButton.click();
+        if (equalsButton) equalsButton.click();
     } else if (key === "Backspace") {
-        backspaceButton.click();
+        if (document.activeElement !== calculation) {
+            backspaceAtCursor();
+        }
     } else if (key === "Escape") {
-        clearButton.click();
+        if (clearButton) clearButton.click();
     } else if (key === "%") {
-        percentageButton.click();
+        insertTextAtCursor("%");
     }
 });
 
-
-/* =========================================================
-   BRACKET BUTTON LISTENERS
-   ========================================================= */
-
+/* BRACKET BUTTONS */
 const bracketButtons = document.querySelectorAll(".bracket");
 
 bracketButtons.forEach(button => {
     button.addEventListener("click", () => {
         triggerHaptic();
         const bracket = button.dataset.bracket || button.textContent.trim();
-
-        if (finalized) {
-            expression = "";
-            finalized = false;
-        }
-
-        expression += bracket;
-        updateDisplay();
+        insertTextAtCursor(bracket);
     });
 });
