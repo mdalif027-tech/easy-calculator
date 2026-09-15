@@ -1675,7 +1675,6 @@ window.addEventListener("keydown", function(event) {
 });
 /* BRACKET BUTTONS */
 const bracketButtons = document.querySelectorAll(".bracket");
-
 bracketButtons.forEach(button => {
     button.addEventListener("click", () => {
         triggerHaptic();
