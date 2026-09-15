@@ -117,9 +117,13 @@ function getValidSelection() {
     return { start, end };
 }
 
-function setCaretPosition(offset) {
+function setCaretPosition(offset, shouldFocus = true) {
     if (!calculation) return;
-    calculation.focus();
+
+    if (shouldFocus) {
+        calculation.focus();
+    }
+
     const sel = window.getSelection();
     if (!sel) return;
 
@@ -177,7 +181,7 @@ function insertTextAtCursor(text) {
     const newCaretPos = start + text.length;
 
     updateDisplay();
-    setCaretPosition(newCaretPos);
+    setCaretPosition(newCaretPos, false);
 }
 
 function backspaceAtCursor() {
@@ -186,7 +190,7 @@ function backspaceAtCursor() {
         finalized = false;
         savedSelection = { start: 0, end: 0 };
         updateDisplay();
-        setCaretPosition(0);
+        setCaretPosition(0, false);
         return;
     }
 
@@ -202,14 +206,27 @@ function backspaceAtCursor() {
     }
 
     updateDisplay();
-    setCaretPosition(newCaretPos);
+    setCaretPosition(newCaretPos, false);
 }
 
-// Prevent focus loss when clicking on-screen buttons
+// Prevent focus loss and virtual keyboard trigger when tapping on-screen buttons
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".keypad button, .bracket, .sci-btn").forEach(btn => {
-        btn.addEventListener("mousedown", (e) => e.preventDefault());
+        ["mousedown", "touchstart", "pointerdown"].forEach(eventType => {
+            btn.addEventListener(eventType, (e) => e.preventDefault());
+        });
     });
+
+    // Handle Premium Active State on load
+    if (localStorage.getItem("noAdsPurchased") === "true") {
+        const adBanner = document.querySelector(".app-ad-banner");
+        if (adBanner) adBanner.style.display = "none";
+        const removeAdsBtn = document.getElementById("removeAdsButton");
+        if (removeAdsBtn) {
+            removeAdsBtn.textContent = "✅ Premium Active (No Ads)";
+            removeAdsBtn.style.pointerEvents = "none";
+        }
+    }
 });
 
 /* PARSER & EVALUATOR */
@@ -412,7 +429,7 @@ if (calculation) {
     calculation.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
-            equalsButton.click();
+            if (equalsButton) equalsButton.click();
         }
     });
 }
@@ -438,12 +455,19 @@ operatorButtons.forEach(button => {
 
         const { start, end } = getValidSelection();
 
+        if (start !== end) {
+            expression = expression.slice(0, start) + operator + expression.slice(end);
+            updateDisplay();
+            setCaretPosition(start + 1);
+            return;
+        }
+
         if (!expression && operator === "−") {
             insertTextAtCursor("−");
             return;
         }
 
-        if (start > 0 && isOperator(expression[start - 1]) && start === end) {
+        if (start > 0 && isOperator(expression[start - 1])) {
             expression = expression.slice(0, start - 1) + operator + expression.slice(start);
             updateDisplay();
             setCaretPosition(start);
@@ -762,12 +786,15 @@ let interestType = "simple";
 let interestDirection = 1;
 
 const interestActions = document.querySelector(".interest-actions");
-const interestClearButton = document.createElement("button");
-interestClearButton.id = "interestClearButton";
-interestClearButton.textContent = "Clear";
-interestClearButton.type = "button";
+let interestClearButton = document.getElementById("interestClearButton");
 
-if (interestActions) { interestActions.appendChild(interestClearButton); }
+if (interestActions && !interestClearButton) {
+    interestClearButton = document.createElement("button");
+    interestClearButton.id = "interestClearButton";
+    interestClearButton.textContent = "Clear";
+    interestClearButton.type = "button";
+    interestActions.appendChild(interestClearButton);
+}
 
 function formatInterestNumber(value) {
     if (!Number.isFinite(value)) return "0";
@@ -888,16 +915,18 @@ if (subtractInterestButton) {
     });
 }
 
-interestClearButton.addEventListener("click", function() {
-    triggerHaptic();
-    if (interestAmount) interestAmount.value = "";
-    if (interestRate) interestRate.value = "";
-    if (interestTime) interestTime.value = "";
-    if (interestResult) interestResult.textContent = "0";
-    if (interestFinalAmount) interestFinalAmount.textContent = "0";
-    calculateInterest();
-    if (interestAmount) interestAmount.focus();
-});
+if (interestClearButton) {
+    interestClearButton.addEventListener("click", function() {
+        triggerHaptic();
+        if (interestAmount) interestAmount.value = "";
+        if (interestRate) interestRate.value = "";
+        if (interestTime) interestTime.value = "";
+        if (interestResult) interestResult.textContent = "0";
+        if (interestFinalAmount) interestFinalAmount.textContent = "0";
+        calculateInterest();
+        if (interestAmount) interestAmount.focus();
+    });
+}
 
 [interestAmount, interestRate, interestTime, interestTimeUnit, compoundFrequencySelect].forEach(function(element) {
     if (element) {
@@ -1574,21 +1603,28 @@ if (hapticsToggle) {
     });
 }
 
-const adBanner = document.querySelector(".app-ad-banner");
-if (localStorage.getItem("noAdsPurchased") === "true" && adBanner) {
-    adBanner.style.display = "none";
-}
-
+/* NO ADS & PREMIUM MONETIZATION HANDLER */
 const removeAdsButton = document.getElementById("removeAdsButton");
+
 if (removeAdsButton) {
     removeAdsButton.addEventListener("click", function() {
         triggerHaptic();
-        let confirmed = confirm("Would you like to purchase permanent No-Ads for $1.99?");
+
+        // Optional Web Monetization or Digital Goods API Hook (Android TWA / Google Play Billing)
+        if (window.getDigitalGoodsService) {
+            // Android TWA Digital Goods API Handler
+            console.log("Initiating Play Store In-App Purchase...");
+        }
+
+        let confirmed = confirm("Upgrade to Premium features & remove ads permanently for $1.99?");
 
         if (confirmed) {
             localStorage.setItem("noAdsPurchased", "true");
+            
+            const adBanner = document.querySelector(".app-ad-banner");
             if (adBanner) adBanner.style.display = "none";
-            removeAdsButton.textContent = "✅ Ad-Free Active!";
+
+            removeAdsButton.textContent = "✅ Premium Active (No Ads)";
             removeAdsButton.style.pointerEvents = "none";
         }
     });
@@ -1596,32 +1632,44 @@ if (removeAdsButton) {
 
 /* KEYBOARD SUPPORT */
 window.addEventListener("keydown", function(event) {
-    if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+    if (
+        ["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) ||
+        document.activeElement.isContentEditable
+    ) {
+        return;
+    }
 
     const key = event.key;
 
     if (!isNaN(key) || key === ".") {
+        event.preventDefault();
         insertTextAtCursor(key);
     } else if (key === "+") {
+        event.preventDefault();
         insertTextAtCursor("+");
     } else if (key === "-") {
+        event.preventDefault();
         insertTextAtCursor("−");
     } else if (key === "*") {
+        event.preventDefault();
         insertTextAtCursor("×");
     } else if (key === "/") {
         event.preventDefault();
         insertTextAtCursor("÷");
     } else if (key === "(" || key === ")") {
+        event.preventDefault();
         insertTextAtCursor(key);
     } else if (key === "Enter" || key === "=") {
+        event.preventDefault();
         if (equalsButton) equalsButton.click();
     } else if (key === "Backspace") {
-        if (document.activeElement !== calculation) {
-            backspaceAtCursor();
-        }
+        event.preventDefault();
+        backspaceAtCursor();
     } else if (key === "Escape") {
+        event.preventDefault();
         if (clearButton) clearButton.click();
     } else if (key === "%") {
+        event.preventDefault();
         insertTextAtCursor("%");
     }
 });
