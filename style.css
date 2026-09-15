@@ -422,4 +422,3 @@ body.compact-buttons .result { font-size: 55px; }
 #calculation:focus {
     caret-color: var(--equals, #2563eb); /* Highlights cursor color on active focus */
 }
-
