@@ -1,6 +1,6 @@
 /* =========================================================
    EASY CALCULATOR
-   UPGRADED SCRIPT WITH INLINE CURSOR-AWARE EDITING
+   UPGRADED SCRIPT - MOBILE TOUCH & CURSOR FIXES
    ========================================================= */
 
 function triggerHaptic() {
@@ -41,7 +41,7 @@ const percentageNumerical = document.getElementById("percentageNumerical");
 let expression = "";
 let finalized = false;
 let percentageMode = localStorage.getItem("percentageMode") || "proportional";
-let isDegreeMode = true; // Angle mode for Scientific Calculator
+let isDegreeMode = true;
 
 const operators = ["+", "−", "-", "×", "*", "÷", "/", "^", "√"];
 
@@ -78,6 +78,31 @@ function factorial(n) {
     let res = 1;
     for (let i = 2; i <= n; i++) res *= i;
     return res;
+}
+
+/* =========================================================
+   SAFE MOBILE TOUCH / CLICK EVENT BINDER
+   ========================================================= */
+function bindFastClick(element, callback) {
+    if (!element) return;
+    
+    let touchHandled = false;
+
+    element.addEventListener("touchstart", function (e) {
+        touchHandled = true;
+        if (e.cancelable) {
+            e.preventDefault();
+        }
+        callback(e);
+    }, { passive: false });
+
+    element.addEventListener("click", function (e) {
+        if (touchHandled) {
+            touchHandled = false;
+            return;
+        }
+        callback(e);
+    });
 }
 
 /* =========================================================
@@ -181,7 +206,7 @@ function insertTextAtCursor(text) {
     const newCaretPos = start + text.length;
 
     updateDisplay();
-    setCaretPosition(newCaretPos, false);
+    setCaretPosition(newCaretPos, true);
 }
 
 function backspaceAtCursor() {
@@ -190,7 +215,7 @@ function backspaceAtCursor() {
         finalized = false;
         savedSelection = { start: 0, end: 0 };
         updateDisplay();
-        setCaretPosition(0, false);
+        setCaretPosition(0, true);
         return;
     }
 
@@ -206,28 +231,8 @@ function backspaceAtCursor() {
     }
 
     updateDisplay();
-    setCaretPosition(newCaretPos, false);
+    setCaretPosition(newCaretPos, true);
 }
-
-// Prevent focus loss and virtual keyboard trigger when tapping on-screen buttons
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".keypad button, .bracket, .sci-btn").forEach(btn => {
-        ["mousedown", "touchstart", "pointerdown"].forEach(eventType => {
-            btn.addEventListener(eventType, (e) => e.preventDefault());
-        });
-    });
-
-    // Handle Premium Active State on load
-    if (localStorage.getItem("noAdsPurchased") === "true") {
-        const adBanner = document.querySelector(".app-ad-banner");
-        if (adBanner) adBanner.style.display = "none";
-        const removeAdsBtn = document.getElementById("removeAdsButton");
-        if (removeAdsBtn) {
-            removeAdsBtn.textContent = "✅ Premium Active (No Ads)";
-            removeAdsBtn.style.pointerEvents = "none";
-        }
-    }
-});
 
 /* PARSER & EVALUATOR */
 function tokenize(str) {
@@ -403,7 +408,7 @@ function updateDisplay() {
 }
 
 if (calculation) {
-    ["keyup", "mouseup", "click", "focus", "input", "selectionchange"].forEach(evt => {
+    ["keyup", "mouseup", "touchend", "focus", "input", "selectionchange"].forEach(evt => {
         calculation.addEventListener(evt, saveCaretPosition);
     });
 
@@ -435,7 +440,7 @@ if (calculation) {
 }
 
 numberButtons.forEach(button => {
-    button.addEventListener("click", () => {
+    bindFastClick(button, () => {
         triggerHaptic();
         const number = button.textContent.trim();
         insertTextAtCursor(number);
@@ -443,7 +448,7 @@ numberButtons.forEach(button => {
 });
 
 operatorButtons.forEach(button => {
-    button.addEventListener("click", () => {
+    bindFastClick(button, () => {
         triggerHaptic();
         const operator = button.dataset.operator;
 
@@ -478,14 +483,14 @@ operatorButtons.forEach(button => {
 });
 
 if (percentageButton) {
-    percentageButton.addEventListener("click", () => {
+    bindFastClick(percentageButton, () => {
         triggerHaptic();
         insertTextAtCursor("%");
     });
 }
 
 if (equalsButton) {
-    equalsButton.addEventListener("click", () => {
+    bindFastClick(equalsButton, () => {
         triggerHaptic();
         if (!expression) return;
 
@@ -508,7 +513,7 @@ if (equalsButton) {
 }
 
 if (clearButton) {
-    clearButton.addEventListener("click", () => {
+    bindFastClick(clearButton, () => {
         triggerHaptic();
         expression = "";
         finalized = false;
@@ -519,14 +524,14 @@ if (clearButton) {
 }
 
 if (backspaceButton) {
-    backspaceButton.addEventListener("click", () => {
+    bindFastClick(backspaceButton, () => {
         triggerHaptic();
         backspaceAtCursor();
     });
 }
 
 if (signButton) {
-    signButton.addEventListener("click", () => {
+    bindFastClick(signButton, () => {
         triggerHaptic();
         if (finalized) {
             expression = result.textContent;
@@ -549,10 +554,10 @@ if (signButton) {
 
 /* SETTINGS & OVERLAYS */
 if (settingsButton && settingsOverlay) {
-    settingsButton.addEventListener("click", () => { triggerHaptic(); settingsOverlay.classList.add("active"); });
+    bindFastClick(settingsButton, () => { triggerHaptic(); settingsOverlay.classList.add("active"); });
 }
 if (closeSettings && settingsOverlay) {
-    closeSettings.addEventListener("click", () => { triggerHaptic(); settingsOverlay.classList.remove("active"); });
+    bindFastClick(closeSettings, () => { triggerHaptic(); settingsOverlay.classList.remove("active"); });
 }
 if (settingsOverlay) {
     settingsOverlay.addEventListener("click", (e) => { if (e.target === settingsOverlay) settingsOverlay.classList.remove("active"); });
@@ -585,7 +590,7 @@ if (percentageNumerical) {
 
 const themeButtons = document.querySelectorAll(".theme-option");
 themeButtons.forEach(button => {
-    button.addEventListener("click", () => {
+    bindFastClick(button, () => {
         triggerHaptic();
         const theme = button.dataset.theme;
 
@@ -626,7 +631,7 @@ if (backgroundImageInput) {
 }
 
 if (removeBackground) {
-    removeBackground.addEventListener("click", () => {
+    bindFastClick(removeBackground, () => {
         triggerHaptic();
         document.body.style.backgroundImage = "";
         document.body.removeAttribute("data-theme");
@@ -669,7 +674,7 @@ function renderHistory() {
     `).join("");
 
     document.querySelectorAll(".history-item").forEach(item => {
-        item.addEventListener("click", () => {
+        bindFastClick(item, () => {
             triggerHaptic();
             const idx = item.dataset.index;
             expression = history[idx].answer;
@@ -682,10 +687,10 @@ function renderHistory() {
 }
 
 if (historyButton && historyOverlay) {
-    historyButton.addEventListener("click", () => { triggerHaptic(); renderHistory(); historyOverlay.classList.add("active"); });
+    bindFastClick(historyButton, () => { triggerHaptic(); renderHistory(); historyOverlay.classList.add("active"); });
 }
 if (closeHistory && historyOverlay) {
-    closeHistory.addEventListener("click", () => { triggerHaptic(); renderHistory(); historyOverlay.classList.remove("active"); });
+    bindFastClick(closeHistory, () => { triggerHaptic(); renderHistory(); historyOverlay.classList.remove("active"); });
 }
 if (historyOverlay) {
     historyOverlay.addEventListener("click", (e) => { if (e.target === historyOverlay) historyOverlay.classList.remove("active"); });
@@ -720,9 +725,14 @@ if (savedCompactButtons === "true") {
 
 updatePercentageSetting();
 
-/* DYNAMIC STYLES INTEGRATION (MODES & DISPLAY) */
+/* DYNAMIC STYLES INTEGRATION (PREVENT DOUBLE TAP ZOOM & SELECTION ACCELERATION) */
 const dynamicStyles = document.createElement("style");
 dynamicStyles.innerHTML = `
+    button, input[type="button"], .mode-btn, .number, .operator, .equals {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
     .calculation {
         min-height: 1.5em;
         font-size: 30px;
@@ -874,7 +884,7 @@ function calculateInterest() {
 }
 
 if (simpleInterestButton) {
-    simpleInterestButton.addEventListener("click", function() {
+    bindFastClick(simpleInterestButton, function() {
         triggerHaptic();
         interestType = "simple";
         simpleInterestButton.classList.add("active");
@@ -885,7 +895,7 @@ if (simpleInterestButton) {
 }
 
 if (compoundInterestButton) {
-    compoundInterestButton.addEventListener("click", function() {
+    bindFastClick(compoundInterestButton, function() {
         triggerHaptic();
         interestType = "compound";
         compoundInterestButton.classList.add("active");
@@ -896,7 +906,7 @@ if (compoundInterestButton) {
 }
 
 if (addInterestButton) {
-    addInterestButton.addEventListener("click", function() {
+    bindFastClick(addInterestButton, function() {
         triggerHaptic();
         interestDirection = 1;
         addInterestButton.classList.add("active");
@@ -906,7 +916,7 @@ if (addInterestButton) {
 }
 
 if (subtractInterestButton) {
-    subtractInterestButton.addEventListener("click", function() {
+    bindFastClick(subtractInterestButton, function() {
         triggerHaptic();
         interestDirection = -1;
         subtractInterestButton.classList.add("active");
@@ -916,7 +926,7 @@ if (subtractInterestButton) {
 }
 
 if (interestClearButton) {
-    interestClearButton.addEventListener("click", function() {
+    bindFastClick(interestClearButton, function() {
         triggerHaptic();
         if (interestAmount) interestAmount.value = "";
         if (interestRate) interestRate.value = "";
@@ -936,7 +946,7 @@ if (interestClearButton) {
 });
 
 if (interestModeButton) {
-    interestModeButton.addEventListener("click", function() {
+    bindFastClick(interestModeButton, function() {
         triggerHaptic();
         if (display) display.style.display = "none";
         if (keypad) keypad.style.display = "none";
@@ -956,7 +966,7 @@ if (interestModeButton) {
 }
 
 if (interestBackButton) {
-    interestBackButton.addEventListener("click", function() {
+    bindFastClick(interestBackButton, function() {
         triggerHaptic();
         if (interestCalculator) interestCalculator.classList.remove("active");
         if (display) display.style.display = "";
@@ -989,10 +999,10 @@ function setActiveSubMode(activeBtn, activeSection) {
     if (activeSection) activeSection.style.display = "block";
 }
 
-if (othersSubConversion) othersSubConversion.addEventListener("click", function() { triggerHaptic(); setActiveSubMode(othersSubConversion, subSectionConversion); });
-if (othersSubBMI) othersSubBMI.addEventListener("click", function() { triggerHaptic(); setActiveSubMode(othersSubBMI, subSectionBMI); });
-if (othersSubAge) othersSubAge.addEventListener("click", function() { triggerHaptic(); setActiveSubMode(othersSubAge, subSectionAge); });
-if (othersSubEMI) othersSubEMI.addEventListener("click", function() { triggerHaptic(); setActiveSubMode(othersSubEMI, subSectionEMI); calculateEMI(); });
+if (othersSubConversion) bindFastClick(othersSubConversion, function() { triggerHaptic(); setActiveSubMode(othersSubConversion, subSectionConversion); });
+if (othersSubBMI) bindFastClick(othersSubBMI, function() { triggerHaptic(); setActiveSubMode(othersSubBMI, subSectionBMI); });
+if (othersSubAge) bindFastClick(othersSubAge, function() { triggerHaptic(); setActiveSubMode(othersSubAge, subSectionAge); });
+if (othersSubEMI) bindFastClick(othersSubEMI, function() { triggerHaptic(); setActiveSubMode(othersSubEMI, subSectionEMI); calculateEMI(); });
 
 /* UNITS CONVERSION */
 const conversionCategory = document.getElementById("conversionCategory");
@@ -1204,7 +1214,7 @@ function calculateEMI() {
 });
 
 if (shareEmiButton) {
-    shareEmiButton.addEventListener("click", function() {
+    bindFastClick(shareEmiButton, function() {
         triggerHaptic();
         const text = `EMI Breakdown:\nLoan Amount: ${emiAmount ? emiAmount.value : 0}\nInterest Rate: ${emiRate ? emiRate.value : 0}%\nTenure: ${emiTenure ? emiTenure.value : 0} ${emiTenureUnit ? emiTenureUnit.value : ''}\nMonthly EMI: ${emiMonthlyVal ? emiMonthlyVal.textContent : 0}\nTotal Interest: ${emiTotalInterestVal ? emiTotalInterestVal.textContent : 0}\nTotal Payable: ${emiTotalPayableVal ? emiTotalPayableVal.textContent : 0}`;
 
@@ -1218,7 +1228,7 @@ if (shareEmiButton) {
 }
 
 if (othersModeButton) {
-    othersModeButton.addEventListener("click", function() {
+    bindFastClick(othersModeButton, function() {
         triggerHaptic();
         if (display) display.style.display = "none";
         if (keypad) keypad.style.display = "none";
@@ -1239,7 +1249,7 @@ if (othersModeButton) {
 }
 
 if (othersBackButton) {
-    othersBackButton.addEventListener("click", function() {
+    bindFastClick(othersBackButton, function() {
         triggerHaptic();
         if (othersCalculator) othersCalculator.classList.remove("active");
         othersBackButton.hidden = true;
@@ -1310,7 +1320,7 @@ function calculateSale() {
 });
 
 if (shareSaleButton) {
-    shareSaleButton.addEventListener("click", function() {
+    bindFastClick(shareSaleButton, function() {
         triggerHaptic();
         const text = `Sale Breakdown:\nOriginal Price: ${saleOriginalPrice ? saleOriginalPrice.value : 0}\nDiscount: ${saleDiscountRate ? saleDiscountRate.value : 0}%\nYou Save: ${saleYouSave ? saleYouSave.textContent : 0}\nFinal Price: ${saleFinalPrice ? saleFinalPrice.textContent : 0}`;
 
@@ -1326,7 +1336,7 @@ if (shareSaleButton) {
 const shareInterestButton = document.getElementById("shareInterestButton");
 
 if (shareInterestButton) {
-    shareInterestButton.addEventListener("click", function() {
+    bindFastClick(shareInterestButton, function() {
         triggerHaptic();
         const text = `Interest Breakdown (${interestType.toUpperCase()}):\nPrincipal: ${interestAmount ? interestAmount.value : 0}\nRate: ${interestRate ? interestRate.value : 0}%\nTime: ${interestTime ? interestTime.value : 0} ${interestTimeUnit ? interestTimeUnit.value : ''}\nInterest Earned: ${interestResult ? interestResult.textContent : 0}\nFinal Amount: ${interestFinalAmount ? interestFinalAmount.textContent : 0}`;
 
@@ -1340,7 +1350,7 @@ if (shareInterestButton) {
 }
 
 if (saleModeButton) {
-    saleModeButton.addEventListener("click", function() {
+    bindFastClick(saleModeButton, function() {
         triggerHaptic();
         if (display) display.style.display = "none";
         if (keypad) keypad.style.display = "none";
@@ -1360,7 +1370,7 @@ if (saleModeButton) {
 }
 
 if (saleBackButton) {
-    saleBackButton.addEventListener("click", function() {
+    bindFastClick(saleBackButton, function() {
         triggerHaptic();
         if (saleCalculator) saleCalculator.classList.remove("active");
         saleBackButton.hidden = true;
@@ -1378,7 +1388,7 @@ const scientificBackButton = document.getElementById("scientificBackButton");
 const degRadToggle = document.getElementById("degRadToggle");
 
 if (degRadToggle) {
-    degRadToggle.addEventListener("click", function() {
+    bindFastClick(degRadToggle, function() {
         triggerHaptic();
         isDegreeMode = !isDegreeMode;
         degRadToggle.textContent = isDegreeMode ? "DEG" : "RAD";
@@ -1386,7 +1396,7 @@ if (degRadToggle) {
 }
 
 if (scientificModeButton) {
-    scientificModeButton.addEventListener("click", function() {
+    bindFastClick(scientificModeButton, function() {
         triggerHaptic();
         if (display) display.style.display = "";
         if (keypad) keypad.style.display = "";
@@ -1405,7 +1415,7 @@ if (scientificModeButton) {
 }
 
 if (scientificBackButton) {
-    scientificBackButton.addEventListener("click", function() {
+    bindFastClick(scientificBackButton, function() {
         triggerHaptic();
         if (scientificCalculator) scientificCalculator.classList.remove("active");
         scientificBackButton.hidden = true;
@@ -1419,7 +1429,7 @@ if (scientificBackButton) {
 const sciButtons = document.querySelectorAll(".sci-btn");
 
 sciButtons.forEach(function(button) {
-    button.addEventListener("click", function() {
+    bindFastClick(button, function() {
         triggerHaptic();
         const action = button.dataset.action;
 
@@ -1512,7 +1522,7 @@ if (SpeechRecognition && micButton) {
     recognition.continuous = false;
     let isListening = false;
 
-    micButton.addEventListener("click", function() {
+    bindFastClick(micButton, function() {
         triggerHaptic();
         if (!isListening) {
             micButton.style.opacity = "0.5";
@@ -1568,7 +1578,7 @@ if (SpeechRecognition && micButton) {
 const shareAppSettingButton = document.getElementById("shareAppSettingButton");
 
 if (shareAppSettingButton) {
-    shareAppSettingButton.addEventListener("click", function() {
+    bindFastClick(shareAppSettingButton, function() {
         triggerHaptic();
         const shareData = {
             title: "Easy Calculator",
@@ -1603,28 +1613,21 @@ if (hapticsToggle) {
     });
 }
 
-/* NO ADS & PREMIUM MONETIZATION HANDLER */
+const adBanner = document.querySelector(".app-ad-banner");
+if (localStorage.getItem("noAdsPurchased") === "true" && adBanner) {
+    adBanner.style.display = "none";
+}
+
 const removeAdsButton = document.getElementById("removeAdsButton");
-
 if (removeAdsButton) {
-    removeAdsButton.addEventListener("click", function() {
+    bindFastClick(removeAdsButton, function() {
         triggerHaptic();
-
-        // Optional Web Monetization or Digital Goods API Hook (Android TWA / Google Play Billing)
-        if (window.getDigitalGoodsService) {
-            // Android TWA Digital Goods API Handler
-            console.log("Initiating Play Store In-App Purchase...");
-        }
-
-        let confirmed = confirm("Upgrade to Premium features & remove ads permanently for $1.99?");
+        let confirmed = confirm("Would you like to purchase permanent No-Ads for $1.99?");
 
         if (confirmed) {
             localStorage.setItem("noAdsPurchased", "true");
-            
-            const adBanner = document.querySelector(".app-ad-banner");
             if (adBanner) adBanner.style.display = "none";
-
-            removeAdsButton.textContent = "✅ Premium Active (No Ads)";
+            removeAdsButton.textContent = "✅ Ad-Free Active!";
             removeAdsButton.style.pointerEvents = "none";
         }
     });
@@ -1673,10 +1676,12 @@ window.addEventListener("keydown", function(event) {
         insertTextAtCursor("%");
     }
 });
+
 /* BRACKET BUTTONS */
 const bracketButtons = document.querySelectorAll(".bracket");
+
 bracketButtons.forEach(button => {
-    button.addEventListener("click", () => {
+    bindFastClick(button, () => {
         triggerHaptic();
         const bracket = button.dataset.bracket || button.textContent.trim();
         insertTextAtCursor(bracket);
