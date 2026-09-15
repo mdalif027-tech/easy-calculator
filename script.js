@@ -1673,7 +1673,6 @@ window.addEventListener("keydown", function(event) {
         insertTextAtCursor("%");
     }
 });
-
 /* BRACKET BUTTONS */
 const bracketButtons = document.querySelectorAll(".bracket");
 
@@ -1684,4 +1683,3 @@ bracketButtons.forEach(button => {
         insertTextAtCursor(bracket);
     });
 });
-
