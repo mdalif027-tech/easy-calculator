@@ -1684,3 +1684,4 @@ bracketButtons.forEach(button => {
         insertTextAtCursor(bracket);
     });
 });
+
