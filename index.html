@@ -57,9 +57,7 @@
                 <span id="voiceHint" style="font-size: 0.75rem; color: var(--muted, #888); opacity: 0.8;">Tap & say "5 plus 3"</span>
             </div>
 
-           
-<div class="calculation" id="calculation" contenteditable="true" spellcheck="false"></div>
-
+            <div id="calculation" class="calculation" contenteditable="true" tabindex="0"></div>
             <div class="result" id="result">0</div>
 
         </section>
@@ -160,11 +158,6 @@
             <button class="affiliate-card share-btn-action" id="shareSaleButton" style="width:100%; margin-top:12px; text-align:center; cursor:pointer;">
                 📤 Share Sale Breakdown
             </button>
-
-            <!-- Contextual Affiliate Banner -->
-            <div class="affiliate-card">
-                <span>🛍️ Want more savings? <a href="#" target="_blank" rel="noopener">Install top-rated cash-back extensions</a></span>
-            </div>
 
             <!-- Explanation -->
             <details class="interest-explanation">
@@ -582,11 +575,6 @@
                 📤 Share Interest Breakdown
             </button>
 
-            <!-- Contextual Affiliate Recommendation -->
-            <div class="affiliate-card">
-                <span>💡 Looking to grow your money? <a href="#" target="_blank" rel="noopener">Compare top high-yield savings accounts</a></span>
-            </div>
-
 
             <!-- Explanation -->
             <details class="interest-explanation">
@@ -642,10 +630,9 @@
         </section>
 
         <!-- Non-Intrusive Display Ad Space -->
-        <footer class="app-ad-banner">
-            <span class="ad-label">Sponsored</span>
-            <div class="ad-content">Clean, responsive ad space ready for network integration.</div>
-        </footer>
+        <footer class="app-ad-banner" id="adBanner">
+    <!-- Real Google AdMob / AdSense script will go here -->
+</footer>
 
     </main>
 
@@ -820,10 +807,9 @@
                 📤 Share Easy Calculator App
             </button>
 
-            <!-- Remove Ads Button Properly Placed Inside Panel -->
-            <button class="theme-option" id="removeAdsButton" style="margin-top: 10px; text-align: center; background: var(--operator); color: var(--operator-text);">
-                ⭐ Upgrade to No Ads ($1.99)
-            </button>
+<!-- <button class="theme-option" id="removeAdsButton" style="margin-top: 10px; text-align: center; background: var(--operator); color: var(--operator-text);">
+    ⭐ Upgrade Premium Features
+</button> -->
 
         </div>
 
@@ -863,7 +849,7 @@
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./sw.js")
+          navigator.serviceWorker.register("sw.js")
             .then(() => console.log("Service Worker registered successfully!"))
             .catch(err => console.log("Service Worker registration failed:", err));
         });
@@ -871,5 +857,6 @@
     </script>
 
 </body>
+
 </html>
 
