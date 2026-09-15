@@ -387,8 +387,38 @@ body.compact-buttons .result { font-size: 55px; }
     .sub-mode-btn { font-size: 14px; padding: 10px 4px; }
 }
 
+
 .sci-card-container { background: var(--display); border: 2px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 15px; }
 .sci-keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
 .sci-btn { padding: 10px 6px; font-size: 14px; font-weight: 600; border-radius: 8px; border: 2px solid var(--border); background-color: var(--number); color: var(--text); cursor: pointer; text-align: center; transition: transform 0.1s ease, filter 0.1s ease; }
 .sci-btn:hover { transform: translateY(-2px); filter: brightness(0.96); }
 .sci-btn:active { transform: scale(0.96); filter: brightness(0.9); }
+
+#calculation {
+    outline: none;
+    caret-color: #000000; /* Color of the blinking cursor line (change to match your theme) */
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* Optional: Ensures the container keeps cursor focus when tapped */
+#calculation:focus {
+    caret-color: #0056b3; /* Blinking cursor turns blue when active */
+}
+/* Ensure the contenteditable display element renders a visible blinking cursor */
+#calculation {
+    display: block;
+    outline: none;
+    caret-color: var(--text, #000000); /* Adapts blinking cursor to current theme text color */
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+    min-height: 1.5em;
+    padding-top: 28px;
+    word-break: break-all;
+}
+
+/* Ensure caret remains visible when focused */
+#calculation:focus {
+    caret-color: var(--equals, #2563eb); /* Highlights cursor color on active focus */
+}
