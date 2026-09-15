@@ -57,7 +57,7 @@
                 <span id="voiceHint" style="font-size: 0.75rem; color: var(--muted, #888); opacity: 0.8;">Tap & say "5 plus 3"</span>
             </div>
 
-            <div id="calculation" class="calculation" contenteditable="true" tabindex="0"></div>
+            <div id="calculation" class="calculation" tabindex="-1"></div>
             <div class="result" id="result">0</div>
 
         </section>
@@ -121,10 +121,10 @@
                 <span>Original Price</span>
                 <div class="interest-input">
                     <input
-                        id="saleOriginalPrice"
-                        type="number"
-                        inputmode="decimal"
-                        placeholder="0">
+    id="saleOriginalPrice"
+    type="number"
+    inputmode="none"
+    placeholder="0">
                 </div>
             </label>
 
@@ -222,6 +222,7 @@
 
                 <label class="interest-field">
                     <span>To</span>
+
                     <div class="interest-input">
                         <select id="conversionToUnit">
                             <option value="feet">Feet</option>
@@ -845,16 +846,18 @@
     </div>
 
 
-    <script src="script.js"></script>
+
+    <script src="script.js">
+</script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("sw.js")
+          navigator.serviceWorker.register("./sw.js")
             .then(() => console.log("Service Worker registered successfully!"))
             .catch(err => console.log("Service Worker registration failed:", err));
         });
       }
     </script>
+
 </body>
 </html>
-
